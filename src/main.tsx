@@ -7,6 +7,7 @@ import MainPage from './routes/MainPage'
 import PalettePage from './routes/PalettePage'
 import FiltersPage from './routes/FiltersPage'
 import MyPage from './routes/MyPage'
+import AboutPage from './routes/AboutPage'
 import AdminPage from './routes/AdminPage'
 
 const router = createBrowserRouter([
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       { index: true, element: <MainPage /> },
       { path: 'palettes', element: <PalettePage /> },
       { path: 'filters', element: <FiltersPage /> },
+      { path: 'about', element: <AboutPage /> },
       { path: 'me', element: <MyPage /> },
       { path: 'admin', element: <AdminPage /> },
     ],
