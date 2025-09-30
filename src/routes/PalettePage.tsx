@@ -1,9 +1,12 @@
+import { useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useUIStore } from '../store/ui'
 
 export default function PalettePage() {
   const { taxonomy, setTaxonomy } = useUIStore()
   const [q, setQ] = useState('')
+  const location = useLocation() as any
+  const fromBanner = location.state?.fromBanner
 
   return (
     <section className="container">
@@ -50,6 +53,22 @@ export default function PalettePage() {
       </div>
 
       <p className="muted">Results are mocked for frontend-only build.</p>
+      {fromBanner && (
+        <div className="card" style={{ display: 'grid', gap: 12 }}>
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <b>From Banner:</b>
+            <span>{fromBanner.country}/{fromBanner.city}</span>
+          </div>
+          <div className="grid tight" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+            {fromBanner.colors.map((c: any) => (
+              <div key={c.hex} style={{ display: 'grid', gap: 6, placeItems: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 8, border: '1px solid var(--border)', background: c.hex }} />
+                <code>{c.hex}</code>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid auto">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="card" style={{ display: 'grid', gap: 8 }}>

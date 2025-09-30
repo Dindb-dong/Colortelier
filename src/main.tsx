@@ -9,6 +9,8 @@ import FiltersPage from './routes/FiltersPage'
 import MyPage from './routes/MyPage'
 import AboutPage from './routes/AboutPage'
 import AdminPage from './routes/AdminPage'
+import LoginPage from './routes/LoginPage.tsx'
+import RequireAdmin from './routes/RequireAdmin.tsx'
 
 const router = createBrowserRouter([
   {
@@ -20,7 +22,14 @@ const router = createBrowserRouter([
       { path: 'filters', element: <FiltersPage /> },
       { path: 'about', element: <AboutPage /> },
       { path: 'me', element: <MyPage /> },
-      { path: 'admin', element: <AdminPage /> },
+      { path: 'login', element: <LoginPage /> },
+      {
+        path: 'admin', element: (
+          <RequireAdmin>
+            <AdminPage />
+          </RequireAdmin>
+        )
+      },
     ],
   },
 ])

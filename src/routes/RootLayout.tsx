@@ -1,9 +1,12 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
+import { useAuthStore } from '../store/ui'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import Footer from '../components/Footer'
 
 export default function RootLayout() {
   const [isAuthed, setIsAuthed] = useState(false)
+  const isAdmin = useAuthStore((s) => s.isAdmin)
 
   useEffect(() => {
     let mounted = true
@@ -37,6 +40,7 @@ export default function RootLayout() {
               <li><NavLink to="/palettes">Color Code</NavLink></li>
               <li><NavLink to="/filters">Photo Filter</NavLink></li>
               <li><NavLink to="/about">About Us</NavLink></li>
+              {isAdmin && <li><NavLink to="/admin">Admin</NavLink></li>}
             </ul>
           </div>
 
@@ -61,8 +65,13 @@ export default function RootLayout() {
                 </svg>
               </Link>
             ) : (
-              <Link to="/me" className="primary" style={{ padding: '8px 12px', borderRadius: 999 }}>
+              <Link to="/login" className="primary" style={{ padding: '8px 12px', borderRadius: 999 }}>
                 Login / Signup
+              </Link>
+            )}
+            {isAdmin && (
+              <Link to="/admin" className="primary" style={{ padding: '8px 12px', borderRadius: 999 }}>
+                Admin
               </Link>
             )}
           </div>
@@ -71,6 +80,7 @@ export default function RootLayout() {
       <main>
         <Outlet />
       </main>
+      <Footer />
     </>
   )
 }
