@@ -11,6 +11,7 @@ import AboutPage from './routes/AboutPage'
 import AdminPage from './routes/AdminPage'
 import LoginPage from './routes/LoginPage.tsx'
 import RequireAdmin from './routes/RequireAdmin.tsx'
+import SignUpPage from './routes/SignUpPage.tsx'
 
 const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
       { path: 'about', element: <AboutPage /> },
       { path: 'me', element: <MyPage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'signup', element: <SignUpPage /> },
       {
         path: 'admin', element: (
           <RequireAdmin>
