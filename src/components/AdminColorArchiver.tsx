@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { hexToRgb, rgbToCmyk, rgbToHex } from '../utils/color'
+import HelpModal from './HelpModal'
 
 const DOMAIN = [
   { v: 'L', label: 'L - Place' },
@@ -26,6 +27,7 @@ export default function AdminColorArchiver() {
   const [weather, setWeather] = useState<(typeof WEATHER)[number]>('CL')
   const [time, setTime] = useState<(typeof TIME)[number]>('GD')
   const [theme, setTheme] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
 
   const rgb = useMemo(() => hexToRgb(hex), [hex])
   const cmyk = useMemo(() => rgbToCmyk(rgb), [rgb])
@@ -42,10 +44,19 @@ export default function AdminColorArchiver() {
   }, [domain, country, city, detail, weather, time, theme, slug])
 
   const copy = async () => { try { await navigator.clipboard.writeText(taxonomy) } catch { } }
-
+  const openHelpModal = () => {
+    setIsOpen(true)
+  }
+  const closeHelpModal = () => {
+    setIsOpen(false)
+  }
   return (
     <section className="container">
-      <h2>Admin: Color Archiving</h2>
+      <div className="row" style={{ alignItems: 'center' }}>
+        <h2>Color Archiving</h2>
+        <button className="primary button-cta" onClick={openHelpModal}>Help</button>
+      </div>
+
       <div className="grid auto">
         <label>Hex
           <input value={hex} onChange={(e) => setHex(e.target.value)} placeholder="#FFFFFF" />
@@ -100,10 +111,39 @@ export default function AdminColorArchiver() {
         <label style={{ flex: 1 }}>Generated Code
           <input value={taxonomy} readOnly />
         </label>
-        <button className="primary" onClick={copy}>Copy</button>
+        <button className="primary button-cta" onClick={copy}>Copy</button>
       </div>
 
       <p className="muted">Note: Upload/save is disabled in this frontend-only build.</p>
+      {isOpen && <HelpModal
+        title="컬러 코드 구조"
+        content="
+  <h3><code>[도메인1]-[국가2]-[도시3]-[세부4]-[날씨2]-[시간2](-[주제2, 선택])//[색상 이름]</code></h3>
+  <br />
+  <br />
+  <code>[도메인1]</code> = L=장소(풍경/거리), F=음식, O=오브젝트/사물, P=사람/패션, A=예술/전시, N=자연(식물/바다/산)
+  <br />
+  <code>[국가2]</code> = 국가 코드(ISO 3166-1)<br />(예: 한국=KR, 미국=US 등. 참고: <a href='https://namu.wiki/w/ISO%203166#s-2' target='_blank'>https://namu.wiki/w/ISO%203166#s-2</a>)
+  <br />
+  <code>[도시3]</code> = 로마자 3자(도쿄=TYO, 서울=SEL, 오사카=OSA).
+  <br />
+  <code>[세부4]</code> = 동네/지구 4자(신주쿠=SHNJ, 홍대=HNGD). 모르면 XXX.
+  <br />
+  <code>[날씨2]</code> = CL(맑음), OV(흐림), RA(비), SN(눈), FG(안개), HZ(연무), ST(소나기/뇌우).
+  <br />
+  <code>[시간2]</code> = MR(아침), DT(한낮), EV(저녁), NT(밤), GD(골든아워), BL(블루아워)
+  <br />
+  <code>[주제2, 선택]</code> = SK(하늘), FD(음식), DR(음료), TX(텍스처), PT(패턴), PL(식물) 등
+  <br />
+  <code>[색상 이름]</code> = 네이밍 자유. 영문, 공백 대신 '-' 사용(예: shiroi-kumo)
+  <br />
+  <br />
+  (예시)<일본-도쿄-신주쿠-흐릿함-저녁-하늘//시로이 쿠모> -> 
+  <br /><code>L02-SEL-HND-CL-GD(PL)//shiroi-kumo</code>
+  <br />
+"
+        onClose={closeHelpModal}
+      />}
     </section>
   )
 }

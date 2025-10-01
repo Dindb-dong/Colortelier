@@ -9,7 +9,7 @@ export default function AdminPage() {
 
   return (
     <section style={{ display: 'grid', gap: 24 }}>
-      <h1>Admin</h1>
+      <h1>Admin Page</h1>
       <AdminColorArchiver />
       <ComplementRecommender />
       <div>
