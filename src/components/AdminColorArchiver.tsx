@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { hexToRgb, rgbToCmyk, rgbToHex } from '../utils/color'
 import HelpModal from './HelpModal'
-import SPcodes from '../../public/SPcodes.json'
+import SPcodes from '../SPcodes.json'
 import CreatableSelect from 'react-select/creatable'
 import type { SingleValue } from 'react-select'
 

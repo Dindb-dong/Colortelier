@@ -16,6 +16,10 @@ type UIState = {
   setTaxonomy: (t: Partial<Taxonomy>) => void
   banners: Banner[]
   setBanners: (b: Banner[]) => void
+  themes: ThemeArchive[]
+  addTheme: (t: ThemeArchive) => void
+  filters: FilterArchive[]
+  addFilter: (f: FilterArchive) => void
 }
 
 export type ColorItem = { hex: string; name: string }
@@ -25,6 +29,27 @@ export type Banner = {
   city: string
   imageUrl: string
   colors: ColorItem[]
+}
+
+export type ThemeArchive = {
+  id: string
+  imageObjectUrl: string
+  domain: string
+  country: string
+  city: string
+  detail: string
+  weather: string
+  time: string
+  theme?: string
+  createdAt: number
+}
+
+export type FilterArchive = {
+  id: string
+  beforeObjectUrl: string
+  afterObjectUrl: string
+  notes?: string
+  createdAt: number
 }
 
 const mockBanners: Banner[] = [
@@ -91,6 +116,10 @@ export const useUIStore = create<UIState>((set) => ({
   setTaxonomy: (t) => set((s) => ({ taxonomy: { ...s.taxonomy, ...t } })),
   banners: mockBanners,
   setBanners: (b) => set(() => ({ banners: b })),
+  themes: [],
+  addTheme: (t) => set((s) => ({ themes: [t, ...s.themes] })),
+  filters: [],
+  addFilter: (f) => set((s) => ({ filters: [f, ...s.filters] })),
 }))
 
 type AuthState = {
