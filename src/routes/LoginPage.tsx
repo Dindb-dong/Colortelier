@@ -23,7 +23,7 @@ export default function LoginPage() {
     }
   }, [isAdmin, location.state, navigate])
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent, demo: boolean = false) {
     e.preventDefault()
     setError(null)
     if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
@@ -31,7 +31,7 @@ export default function LoginPage() {
       return
     }
     const isAdminMatch = email.trim() === ADMIN_EMAIL && password === ADMIN_PASSWORD
-    if (isAdminMatch) {
+    if (isAdminMatch || demo) {
       loginAsAdmin(email.trim())
       navigate('/admin', { replace: true })
       return
@@ -47,6 +47,8 @@ export default function LoginPage() {
           <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Sign in to continue</p>
         </div>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 14, padding: 24 }}>
+          {/* TODO: REMOVE TEST ADMIN BUTTON */}
+          <button className="primary button-cta" onClick={(e) => handleSubmit(e, true)}>Test Admin</button>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={{ fontSize: 13, color: '#374151' }}>Email</span>
             <input

@@ -51,7 +51,21 @@ export default function AdminColorArchiver() {
     return `${parts.join('-')}${opt}//${name}`
   }, [domain, country, city, detail, weather, time, theme, name])
 
-  const copy = async () => { try { await navigator.clipboard.writeText(taxonomy) } catch { } }
+  const registerColor = async () => {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/colors`, {
+      method: 'POST',
+      body: JSON.stringify({ taxonomy, rgb, cmyk, name }),
+    })
+    const data = await response.json()
+    console.log(data)
+  }
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(taxonomy)
+      alert('Copied to clipboard')
+    } catch { }
+  }
   const openHelpModal = () => {
     setIsOpen(true)
   }
@@ -170,6 +184,7 @@ export default function AdminColorArchiver() {
         <label style={{ flex: 1 }}>Generated Code
           <input value={taxonomy} readOnly />
         </label>
+        <button className="primary button-cta" onClick={registerColor}>Register</button>
         <button className="primary button-cta" onClick={copy}>Copy</button>
       </div>
 
