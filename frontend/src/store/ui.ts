@@ -1,15 +1,15 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import type {
+  ColorItem,
+  Banner,
+  ThemeArchive,
+  FilterArchive,
+  Taxonomy,
+  LightroomSettings
+} from '../../../shared/types'
 
-type Taxonomy = {
-  domain?: 'L' | 'F' | 'O' | 'P' | 'A' | 'N'
-  country?: string // 2 digits string like 01,02
-  city?: string // 3 letters
-  detail?: string // 3 letters
-  weather?: 'CL' | 'OV' | 'RA' | 'SN' | 'FG' | 'HZ' | 'ST'
-  time?: 'MR' | 'DT' | 'EV' | 'NT' | 'GD' | 'BL'
-  theme?: string | undefined // optional 2 letters
-}
+// Taxonomy type is now imported from shared/types
 
 type UIState = {
   taxonomy: Taxonomy
@@ -22,35 +22,7 @@ type UIState = {
   addFilter: (f: FilterArchive) => void
 }
 
-export type ColorItem = { hex: string; name: string }
-export type Banner = {
-  id: string
-  country: string
-  city: string
-  imageUrl: string
-  colors: ColorItem[]
-}
-
-export type ThemeArchive = {
-  id: string
-  imageObjectUrl: string
-  domain: string
-  country: string
-  city: string
-  detail: string
-  weather: string
-  time: string
-  theme?: string
-  createdAt: number
-}
-
-export type FilterArchive = {
-  id: string
-  beforeObjectUrl: string
-  afterObjectUrl: string
-  notes?: string
-  createdAt: number
-}
+// Types are now imported from shared/types
 
 const mockBanners: Banner[] = [
   {

@@ -35,3 +35,11 @@ code { background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px;
   border: 1px solid var(--border); align-items: center; justify-content: center; display: flex; flex-direction: column; gap: 12px; }
 .help-modal h2 { font-size: 24px; font-weight: 800; margin: 0; }
 .help-modal p { font-size: 16px; margin: 0; text-align: center; padding-bottom: 12px; }
+
+/* Filter Settings Display */
+.filter-settings { margin-top: 16px; }
+.filter-settings h3 { margin: 0 0 12px 0; font-size: 16px; font-weight: 600; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.setting-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.setting-label { font-size: 14px; color: var(--muted); }
+.setting-value { font-size: 14px; font-weight: 600; color: var(--fg); }

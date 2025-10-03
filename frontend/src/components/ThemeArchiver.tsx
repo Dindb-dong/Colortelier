@@ -64,31 +64,37 @@ export default function ThemeArchiver() {
   return (
     <section className="container">
       <h2>Theme Archiving</h2>
-      <div className="grid auto">
-        <label>Image
-          <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        </label>
-        <label>Domain
-          <CreatableSelect options={domainOptions} value={domainOptions.find(o => o.value === domain) || { value: domain, label: domain }} onChange={(opt: SingleValue<Option>) => setDomain(opt?.value ?? domain)} isClearable={false} />
-        </label>
-        <label>Country
-          <CreatableSelect options={countryOptions} value={countryOptions.find(o => o.value === country) || { value: country, label: country }} onChange={(opt: SingleValue<Option>) => setCountry(opt?.value ?? country)} />
-        </label>
-        <label>City
-          <CreatableSelect options={cityOptions} value={cityOptions.find(o => o.value === city) || { value: city, label: city }} onChange={(opt: SingleValue<Option>) => setCity(opt?.value ?? city)} />
-        </label>
-        <label>Detail
-          <CreatableSelect options={detailOptions} value={detailOptions.find(o => o.value === detail) || { value: detail, label: detail }} onChange={(opt: SingleValue<Option>) => setDetail(opt?.value ?? detail)} />
-        </label>
-        <label>Weather
-          <CreatableSelect options={weatherOptions} value={weatherOptions.find(o => o.value === weather) || { value: weather, label: weather }} onChange={(opt: SingleValue<Option>) => setWeather(opt?.value ?? weather)} />
-        </label>
-        <label>Time
-          <CreatableSelect options={timeOptions} value={timeOptions.find(o => o.value === time) || { value: time, label: time }} onChange={(opt: SingleValue<Option>) => setTime(opt?.value ?? time)} />
-        </label>
-        <label>Theme (optional)
-          <CreatableSelect isClearable options={themeOptions} value={theme ? (themeOptions.find(o => o.value === theme) || { value: theme, label: theme }) : null} onChange={(opt: SingleValue<Option>) => setTheme(opt?.value ?? '')} />
-        </label>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+        <div className="grid auto">
+          <label>Domain
+            <CreatableSelect options={domainOptions} value={domainOptions.find(o => o.value === domain) || { value: domain, label: domain }} onChange={(opt: SingleValue<Option>) => setDomain(opt?.value ?? domain)} isClearable={false} />
+          </label>
+          <label>Country
+            <CreatableSelect options={countryOptions} value={countryOptions.find(o => o.value === country) || { value: country, label: country }} onChange={(opt: SingleValue<Option>) => setCountry(opt?.value ?? country)} />
+          </label>
+          <label>City
+            <CreatableSelect options={cityOptions} value={cityOptions.find(o => o.value === city) || { value: city, label: city }} onChange={(opt: SingleValue<Option>) => setCity(opt?.value ?? city)} />
+          </label>
+          <label>Detail
+            <CreatableSelect options={detailOptions} value={detailOptions.find(o => o.value === detail) || { value: detail, label: detail }} onChange={(opt: SingleValue<Option>) => setDetail(opt?.value ?? detail)} />
+          </label>
+          <label>Weather
+            <CreatableSelect options={weatherOptions} value={weatherOptions.find(o => o.value === weather) || { value: weather, label: weather }} onChange={(opt: SingleValue<Option>) => setWeather(opt?.value ?? weather)} />
+          </label>
+          <label>Time
+            <CreatableSelect options={timeOptions} value={timeOptions.find(o => o.value === time) || { value: time, label: time }} onChange={(opt: SingleValue<Option>) => setTime(opt?.value ?? time)} />
+          </label>
+          <label>Theme (optional)
+            <CreatableSelect isClearable options={themeOptions} value={theme ? (themeOptions.find(o => o.value === theme) || { value: theme, label: theme }) : null} onChange={(opt: SingleValue<Option>) => setTheme(opt?.value ?? '')} />
+          </label>
+        </div>
+        <div>
+          <label>Image
+            {file && <img style={{ maxWidth: 300, maxHeight: 400, objectFit: 'cover' }} src={objectUrlFromFile(file)} alt="Theme" />}
+            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            {file && <button className="primary button-cta" onClick={() => setFile(null)}>Remove</button>}
+          </label>
+        </div>
       </div>
       <div className="row">
         <button className="primary button-cta" onClick={onSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>

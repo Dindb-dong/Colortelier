@@ -1,0 +1,16 @@
+{
+  "name": "@colortelier/shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for Colortelier",
+  "main": "types/index.ts",
+  "types": "types/index.ts",
+  "scripts": {
+    "build": "echo 'No build step required for types'"
+  },
+  "keywords": ["types", "colortelier", "shared"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
