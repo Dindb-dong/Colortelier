@@ -1,4 +1,4 @@
-import type { ThemeArchive } from '../store/ui'
+import type { ThemeArchive } from '../../../shared/types'
 
 type Props = {
   item: ThemeArchive

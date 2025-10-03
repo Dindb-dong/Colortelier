@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import ColorCard from './ColorCard'
-import type { Banner } from '../store/ui'
+import type { Banner } from '../../../shared/types'
 import { useNavigate } from 'react-router-dom'
 
 type Props = {

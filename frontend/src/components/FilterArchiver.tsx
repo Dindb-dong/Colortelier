@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { convertToWebpIfLarge, objectUrlFromFile } from '../utils/image'
 import { parseXmpFile } from '../utils/xmpParser'
-import { type LightroomSettings } from '../../../shared/types'
-import { type FilterArchive, useUIStore } from '../store/ui'
+import { type LightroomSettings, type FilterArchive } from '../../../shared/types'
+import { useUIStore } from '../store/ui'
 import FilterSettingsDisplay from './FilterSettingsDisplay'
 
 export default function FilterArchiver() {

@@ -3,7 +3,8 @@ import SPcodes from '../SPcodes.json'
 import CreatableSelect from 'react-select/creatable'
 import type { SingleValue } from 'react-select'
 import { convertToWebpIfLarge, objectUrlFromFile } from '../utils/image'
-import { type ThemeArchive, useUIStore } from '../store/ui'
+import { useUIStore } from '../store/ui'
+import { type ThemeArchive } from '../../../shared/types'
 
 type Option = { value: string; label: string }
 
