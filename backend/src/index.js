@@ -4,6 +4,14 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 
+// Import routes
+import authRoutes from './routes/auth.js';
+import colorRoutes from './routes/colors.js';
+import themeRoutes from './routes/themes.js';
+import filterRoutes from './routes/filters.js';
+import likeRoutes from './routes/likes.js';
+import cartRoutes from './routes/cart.js';
+
 // Load environment variables
 dotenv.config();
 
@@ -13,7 +21,7 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5273',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
 app.use(morgan('combined'));
@@ -36,10 +44,23 @@ app.get('/api', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/health',
-      // Add more endpoints as you develop
+      auth: '/api/auth',
+      colors: '/api/colors',
+      themes: '/api/themes',
+      filters: '/api/filters',
+      likes: '/api/likes',
+      cart: '/api/cart'
     }
   });
 });
+
+// Route handlers
+app.use('/api/auth', authRoutes);
+app.use('/api/colors', colorRoutes);
+app.use('/api/themes', themeRoutes);
+app.use('/api/filters', filterRoutes);
+app.use('/api/likes', likeRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -59,4 +80,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 API Documentation: http://localhost:${PORT}/api`);
 });
