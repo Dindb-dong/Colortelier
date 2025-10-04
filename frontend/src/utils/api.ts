@@ -24,21 +24,19 @@ const removeAuthToken = () => {
   localStorage.removeItem('authToken')
 }
 
-// API request helper
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+// Public API request helper (no auth required)
+const publicApiRequest = async (endpoint: string, options: RequestInit = {}) => {
   console.log('API_BASE_URL:', API_BASE_URL)
-  console.log('apiRequest', endpoint, options)
+  console.log('publicApiRequest', endpoint, options)
 
   if (!API_BASE_URL) {
     throw new Error('API_BASE_URL is not configured')
   }
 
-  const token = getAuthToken()
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
   })
@@ -51,7 +49,38 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   return response.json()
 }
 
-// FormData API request helper (for file uploads)
+// Authenticated API request helper (auth required)
+const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+  console.log('API_BASE_URL:', API_BASE_URL)
+  console.log('apiRequest', endpoint, options)
+
+  if (!API_BASE_URL) {
+    throw new Error('API_BASE_URL is not configured')
+  }
+
+  const token = getAuthToken()
+  if (!token) {
+    throw new Error('Authentication required')
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...options.headers,
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error || 'API request failed')
+  }
+
+  return response.json()
+}
+
+// FormData API request helper (for file uploads - auth required)
 const apiRequestFormData = async (endpoint: string, formData: FormData, options: RequestInit = {}) => {
   console.log('apiRequestFormData', endpoint, formData, options)
 
@@ -60,11 +89,15 @@ const apiRequestFormData = async (endpoint: string, formData: FormData, options:
   }
 
   const token = getAuthToken()
+  if (!token) {
+    throw new Error('Authentication required')
+  }
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     method: options.method || 'POST',
     headers: {
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      'Authorization': `Bearer ${token}`,
       ...options.headers,
     },
     body: formData,
@@ -82,7 +115,7 @@ const apiRequestFormData = async (endpoint: string, formData: FormData, options:
 export const authApi = {
   // 회원가입
   register: async (email: string, password: string, username?: string) => {
-    const result = await apiRequest('/auth/register', {
+    const result = await publicApiRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ email, password, username }),
     })
@@ -97,7 +130,7 @@ export const authApi = {
 
   // 로그인
   login: async (email: string, password: string) => {
-    const result = await apiRequest('/auth/login', {
+    const result = await publicApiRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     })
