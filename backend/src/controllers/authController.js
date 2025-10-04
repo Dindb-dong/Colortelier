@@ -83,7 +83,7 @@ export const login = async (req, res) => {
     // Get user
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, username, password_hash')
+      .select('id, email, username, password_hash, is_admin')
       .eq('email', email.toLowerCase())
       .single();
 
@@ -105,7 +105,8 @@ export const login = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        username: user.username
+        username: user.username,
+        is_admin: user.is_admin
       },
       token
     });

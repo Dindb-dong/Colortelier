@@ -6,7 +6,7 @@ import {
   updateFilter, 
   deleteFilter 
 } from '../controllers/filterController.js';
-import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { authenticateToken, optionalAuth, requireAdmin } from '../middleware/auth.js';
 import { upload, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
@@ -15,9 +15,9 @@ const router = express.Router();
 router.get('/', optionalAuth, getFilters);
 router.get('/:id', optionalAuth, getFilterById);
 
-// Protected routes
+// Admin-only routes
 router.post('/', 
-  authenticateToken, 
+  requireAdmin, 
   upload.fields([
     { name: 'before_image', maxCount: 1 },
     { name: 'after_image', maxCount: 1 },
@@ -27,7 +27,7 @@ router.post('/',
   createFilter
 );
 router.put('/:id', 
-  authenticateToken, 
+  requireAdmin, 
   upload.fields([
     { name: 'before_image', maxCount: 1 },
     { name: 'after_image', maxCount: 1 },
@@ -36,6 +36,6 @@ router.put('/:id',
   handleUploadError, 
   updateFilter
 );
-router.delete('/:id', authenticateToken, deleteFilter);
+router.delete('/:id', requireAdmin, deleteFilter);
 
 export default router;

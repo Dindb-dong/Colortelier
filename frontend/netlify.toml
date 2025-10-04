@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--force"
+  VITE_API_URL = "https://your-backend-domain.com"
 
 [[redirects]]
   from = "/*"

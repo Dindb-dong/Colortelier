@@ -1,8 +1,4 @@
-import dotenv from 'dotenv'
-
-dotenv.config()
-
-const API_BASE_URL = process.env.VITE_API_URL as string
+const API_BASE_URL = import.meta.env.VITE_API_URL as string
 
 // Get auth token from localStorage (backend JWT)
 const getAuthToken = () => {
@@ -30,13 +26,14 @@ const removeAuthToken = () => {
 
 // API request helper
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  console.log(API_BASE_URL)
+  console.log('API_BASE_URL:', API_BASE_URL)
   console.log('apiRequest', endpoint, options)
-  const token = getAuthToken()
-  if (!token) {
-    console.log('apiRequest: No token found')
-    return null
+
+  if (!API_BASE_URL) {
+    throw new Error('API_BASE_URL is not configured')
   }
+
+  const token = getAuthToken()
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
@@ -57,11 +54,12 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
 // FormData API request helper (for file uploads)
 const apiRequestFormData = async (endpoint: string, formData: FormData, options: RequestInit = {}) => {
   console.log('apiRequestFormData', endpoint, formData, options)
-  const token = getAuthToken()
-  if (!token) {
-    console.log('apiRequestFormData: No token found')
-    return null
+
+  if (!API_BASE_URL) {
+    throw new Error('API_BASE_URL is not configured')
   }
+
+  const token = getAuthToken()
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     method: options.method || 'POST',

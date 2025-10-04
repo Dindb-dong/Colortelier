@@ -4,8 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/ui'
 import { authApi } from '../utils/api'
 
-// const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL as string | undefined // 현재 사용하지 않음
-// const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined // 현재 사용하지 않음
+// Admin authentication is now handled by backend
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -38,12 +37,16 @@ export default function LoginPage() {
         return
       }
 
-      // 실제 백엔드 API 로그인
+      // 백엔드 API 로그인
       const result = await authApi.login(email.trim(), password)
 
-      // 로그인 성공 시 어드민 상태로 설정
-      loginAsAdmin(result.user.email)
-      navigate('/admin', { replace: true })
+      // 백엔드에서 받은 is_admin 값으로 어드민 권한 확인
+      if (result.user.is_admin) {
+        loginAsAdmin(result.user.email)
+        navigate('/admin', { replace: true })
+      } else {
+        setError('어드민 권한이 없습니다.')
+      }
     } catch (err: any) {
       setError(err.message || '로그인에 실패했습니다.')
     } finally {

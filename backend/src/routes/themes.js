@@ -6,7 +6,7 @@ import {
   updateTheme, 
   deleteTheme 
 } from '../controllers/themeController.js';
-import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { authenticateToken, optionalAuth, requireAdmin } from '../middleware/auth.js';
 import { upload, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
@@ -15,9 +15,9 @@ const router = express.Router();
 router.get('/', optionalAuth, getThemes);
 router.get('/:id', optionalAuth, getThemeById);
 
-// Protected routes
-router.post('/', authenticateToken, upload.single('thumbnail'), handleUploadError, createTheme);
-router.put('/:id', authenticateToken, upload.single('thumbnail'), handleUploadError, updateTheme);
-router.delete('/:id', authenticateToken, deleteTheme);
+// Admin-only routes
+router.post('/', requireAdmin, upload.single('thumbnail'), handleUploadError, createTheme);
+router.put('/:id', requireAdmin, upload.single('thumbnail'), handleUploadError, updateTheme);
+router.delete('/:id', requireAdmin, deleteTheme);
 
 export default router;
