@@ -1,3 +1,7 @@
+import dotenv from 'dotenv'
+
+dotenv.config()
+
 const API_BASE_URL = process.env.VITE_API_URL as string
 
 // Get auth token from localStorage (backend JWT)
@@ -122,7 +126,7 @@ export const themeApi = {
       page: page.toString(),
       limit: limit.toString(),
       sort,
-      order
+      order,
     })
     if (search) params.append('search', search)
     return apiRequest(`/themes?${params}`)
@@ -227,7 +231,7 @@ export const colorApi = {
       page: page.toString(),
       limit: limit.toString(),
       sort,
-      order
+      order,
     })
     if (search) params.append('search', search)
     return apiRequest(`/colors?${params}`)
@@ -266,7 +270,7 @@ export const filterApi = {
       page: page.toString(),
       limit: limit.toString(),
       sort,
-      order
+      order,
     })
     if (search) params.append('search', search)
     return apiRequest(`/filters?${params}`)
