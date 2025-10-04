@@ -1,6 +1,4 @@
-// import { supabase } from '../lib/supabaseClient' // 현재 사용하지 않음
-
-const API_BASE_URL = 'http://localhost:3001/api'
+const API_BASE_URL = process.env.VITE_API_URL as string
 
 // Get auth token from localStorage (backend JWT)
 const getAuthToken = () => {
