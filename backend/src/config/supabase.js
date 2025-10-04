@@ -4,8 +4,14 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables');
+if (!supabaseUrl) {
+  throw new Error('Missing Supabase URL');
+}
+if (!supabaseAnonKey) {
+  throw new Error('Missing Supabase Anon Key');
+}
+if (!supabaseServiceKey) {
+  throw new Error('Missing Supabase Service Role Key');
 }
 
 // Client for general operations
