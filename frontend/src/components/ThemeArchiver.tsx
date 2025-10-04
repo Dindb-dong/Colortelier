@@ -29,13 +29,6 @@ export default function ThemeArchiver() {
   const timeOptions: Option[] = useMemo(() => SPcodes.time.map((t: string) => ({ value: t.split('=')[0], label: t })), [])
   const themeOptions: Option[] = useMemo(() => SPcodes.theme.map((t: string) => ({ value: t.split('=')[0], label: t })), [])
 
-  const addIfMissing = (list: Option[], setList: (o: Option[]) => void, value: string) => {
-    const exists = list.some(o => o.value === value)
-    if (!exists) {
-      setList([...list, { value: value.split('=')[0], label: value }])
-    }
-  }
-
   const onSave = async () => {
     if (!file) return alert('이미지를 선택해 주세요')
     setSaving(true)

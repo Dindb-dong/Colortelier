@@ -40,3 +40,21 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Color card hover effects */
+.color-card:hover .color-card-actions {
+  opacity: 1 !important;
+}
+
+.color-card-actions button:hover {
+  transform: scale(1.1);
+}
+
+/* Filter card hover effects */
+.card:hover .filter-card-actions {
+  opacity: 1 !important;
+}
+
+.filter-card-actions button:hover {
+  transform: scale(1.1);
+}

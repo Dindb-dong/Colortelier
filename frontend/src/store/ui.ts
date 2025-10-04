@@ -1,12 +1,10 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type {
-  ColorItem,
   Banner,
   ThemeArchive,
   FilterArchive,
-  Taxonomy,
-  LightroomSettings
+  Taxonomy
 } from '../../../shared/types'
 
 // Taxonomy type is now imported from shared/types
