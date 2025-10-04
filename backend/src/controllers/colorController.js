@@ -1,11 +1,27 @@
 import { supabase } from '../config/supabase.js';
-import { validateRequired, validateHexColor, validateRGB, validateHSL, sanitizeString } from '../utils/validation.js';
+import { validateRequired, validateHexColor, validateRGB, validateHSL, validateCMYK, sanitizeString } from '../utils/validation.js';
 
 export const createColorCode = async (req, res) => {
   try {
-    const { hex_code, rgb_r, rgb_g, rgb_b, hsl_h, hsl_s, hsl_l, name, description } = req.body;
+    const { 
+      color_code, 
+      hex_code, 
+      rgb_r, 
+      rgb_g, 
+      rgb_b, 
+      cmyk_c, 
+      cmyk_m, 
+      cmyk_y, 
+      cmyk_k, 
+      hsl_h, 
+      hsl_s, 
+      hsl_l, 
+      name, 
+      description 
+    } = req.body;
 
     // Validation
+    validateRequired(color_code, 'Color code');
     validateRequired(hex_code, 'Hex code');
     validateRequired(rgb_r, 'RGB R');
     validateRequired(rgb_g, 'RGB G');
@@ -23,11 +39,18 @@ export const createColorCode = async (req, res) => {
       return res.status(400).json({ error: 'Invalid HSL values' });
     }
 
-    // Check if color already exists
+    // Validate CMYK values (0-100)
+    if (cmyk_c !== undefined || cmyk_m !== undefined || cmyk_y !== undefined || cmyk_k !== undefined) {
+      if (!validateCMYK(cmyk_c || 0, cmyk_m || 0, cmyk_y || 0, cmyk_k || 0)) {
+        return res.status(400).json({ error: 'CMYK values must be between 0-100' });
+      }
+    }
+
+    // Check if color code already exists
     const { data: existingColor } = await supabase
       .from('color_codes')
       .select('id')
-      .eq('hex_code', hex_code.toUpperCase())
+      .eq('color_code', color_code)
       .single();
 
     if (existingColor) {
@@ -38,10 +61,15 @@ export const createColorCode = async (req, res) => {
     const { data: colorCode, error } = await supabase
       .from('color_codes')
       .insert({
+        color_code: sanitizeString(color_code, 50),
         hex_code: hex_code.toUpperCase(),
         rgb_r: parseInt(rgb_r),
         rgb_g: parseInt(rgb_g),
         rgb_b: parseInt(rgb_b),
+        cmyk_c: cmyk_c ? parseFloat(cmyk_c) : null,
+        cmyk_m: cmyk_m ? parseFloat(cmyk_m) : null,
+        cmyk_y: cmyk_y ? parseFloat(cmyk_y) : null,
+        cmyk_k: cmyk_k ? parseFloat(cmyk_k) : null,
         hsl_h: hsl_h ? parseInt(hsl_h) : null,
         hsl_s: hsl_s ? parseInt(hsl_s) : null,
         hsl_l: hsl_l ? parseInt(hsl_l) : null,
@@ -82,11 +110,11 @@ export const getColorCodes = async (req, res) => {
 
     // Search filter
     if (search) {
-      query = query.or(`hex_code.ilike.%${search}%,name.ilike.%${search}%`);
+      query = query.or(`color_code.ilike.%${search}%,hex_code.ilike.%${search}%,name.ilike.%${search}%`);
     }
 
     // Sorting
-    const validSortFields = ['created_at', 'hex_code', 'name'];
+    const validSortFields = ['created_at', 'color_code', 'hex_code', 'name'];
     const sortField = validSortFields.includes(sort) ? sort : 'created_at';
     const sortOrder = order === 'asc' ? 'asc' : 'desc';
     query = query.order(sortField, { ascending: sortOrder === 'asc' });

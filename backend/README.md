@@ -77,6 +77,14 @@ npm run dev
 - `PUT /api/colors/:id` - Update color code (authenticated, owner only)
 - `DELETE /api/colors/:id` - Delete color code (authenticated, owner only)
 
+**Color Code Fields:**
+
+- `color_code` - Unique color identifier (e.g., "L-KR-SEL-HNGD-CL-GD")
+- `hex_code` - Hex color value (e.g., "#FF5733")
+- `rgb_r`, `rgb_g`, `rgb_b` - RGB values (0-255)
+- `cmyk_c`, `cmyk_m`, `cmyk_y`, `cmyk_k` - CMYK values (0-100)
+- `hsl_h`, `hsl_s`, `hsl_l` - HSL values (optional)
+
 ### Themes
 
 - `GET /api/themes` - Get all themes (with pagination, search, sorting)

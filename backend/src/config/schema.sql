@@ -14,10 +14,15 @@ CREATE TABLE IF NOT EXISTS users (
 -- Color codes table
 CREATE TABLE IF NOT EXISTS color_codes (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  color_code VARCHAR(50) NOT NULL, -- L-KR-SEL-HNGD-CL-GD format
   hex_code VARCHAR(7) NOT NULL,
   rgb_r INTEGER NOT NULL,
   rgb_g INTEGER NOT NULL,
   rgb_b INTEGER NOT NULL,
+  cmyk_c DECIMAL(5,2),
+  cmyk_m DECIMAL(5,2),
+  cmyk_y DECIMAL(5,2),
+  cmyk_k DECIMAL(5,2),
   hsl_h INTEGER,
   hsl_s INTEGER,
   hsl_l INTEGER,
@@ -57,45 +62,34 @@ CREATE TABLE IF NOT EXISTS filters (
 CREATE TABLE IF NOT EXISTS likes (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  color_code_id UUID REFERENCES color_codes(id) ON DELETE CASCADE,
-  filter_id UUID REFERENCES filters(id) ON DELETE CASCADE,
+  item_type VARCHAR(1) NOT NULL CHECK (item_type IN ('c', 'f')), -- 'c' for color_code, 'f' for filter
+  item_id UUID NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  -- Ensure only one of color_code_id or filter_id is set
-  CONSTRAINT check_like_target CHECK (
-    (color_code_id IS NOT NULL AND filter_id IS NULL) OR 
-    (color_code_id IS NULL AND filter_id IS NOT NULL)
-  ),
   -- Ensure unique like per user per item
-  CONSTRAINT unique_user_color_like UNIQUE (user_id, color_code_id),
-  CONSTRAINT unique_user_filter_like UNIQUE (user_id, filter_id)
+  CONSTRAINT unique_user_item_like UNIQUE (user_id, item_type, item_id)
 );
 
 -- Cart table
 CREATE TABLE IF NOT EXISTS cart_items (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  color_code_id UUID REFERENCES color_codes(id) ON DELETE CASCADE,
-  filter_id UUID REFERENCES filters(id) ON DELETE CASCADE,
+  item_type VARCHAR(1) NOT NULL CHECK (item_type IN ('c', 'f')), -- 'c' for color_code, 'f' for filter
+  item_id UUID NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  -- Ensure only one of color_code_id or filter_id is set
-  CONSTRAINT check_cart_target CHECK (
-    (color_code_id IS NOT NULL AND filter_id IS NULL) OR 
-    (color_code_id IS NULL AND filter_id IS NOT NULL)
-  ),
   -- Ensure unique item per user
-  CONSTRAINT unique_user_color_cart UNIQUE (user_id, color_code_id),
-  CONSTRAINT unique_user_filter_cart UNIQUE (user_id, filter_id)
+  CONSTRAINT unique_user_item_cart UNIQUE (user_id, item_type, item_id)
 );
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_color_codes_hex ON color_codes(hex_code);
+CREATE INDEX IF NOT EXISTS idx_color_codes_color_code ON color_codes(color_code);
 CREATE INDEX IF NOT EXISTS idx_color_codes_created_by ON color_codes(created_by);
 CREATE INDEX IF NOT EXISTS idx_themes_created_by ON themes(created_by);
 CREATE INDEX IF NOT EXISTS idx_filters_created_by ON filters(created_by);
 CREATE INDEX IF NOT EXISTS idx_likes_user_id ON likes(user_id);
-CREATE INDEX IF NOT EXISTS idx_likes_color_code_id ON likes(color_code_id);
-CREATE INDEX IF NOT EXISTS idx_likes_filter_id ON likes(filter_id);
+CREATE INDEX IF NOT EXISTS idx_likes_item ON likes(item_type, item_id);
 CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON cart_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_item ON cart_items(item_type, item_id);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()

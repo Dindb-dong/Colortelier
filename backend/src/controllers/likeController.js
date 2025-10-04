@@ -25,7 +25,8 @@ export const toggleColorLike = async (req, res) => {
       .from('likes')
       .select('id')
       .eq('user_id', req.user.id)
-      .eq('color_code_id', colorCodeId)
+      .eq('item_type', 'c')
+      .eq('item_id', colorCodeId)
       .single();
 
     if (existingLike) {
@@ -50,7 +51,8 @@ export const toggleColorLike = async (req, res) => {
         .from('likes')
         .insert({
           user_id: req.user.id,
-          color_code_id: colorCodeId
+          item_type: 'c',
+          item_id: colorCodeId
         });
 
       if (error) {
@@ -93,7 +95,8 @@ export const toggleFilterLike = async (req, res) => {
       .from('likes')
       .select('id')
       .eq('user_id', req.user.id)
-      .eq('filter_id', filterId)
+      .eq('item_type', 'f')
+      .eq('item_id', filterId)
       .single();
 
     if (existingLike) {
@@ -118,7 +121,8 @@ export const toggleFilterLike = async (req, res) => {
         .from('likes')
         .insert({
           user_id: req.user.id,
-          filter_id: filterId
+          item_type: 'f',
+          item_id: filterId
         });
 
       if (error) {
@@ -143,30 +147,31 @@ export const getUserLikes = async (req, res) => {
     const offset = (page - 1) * limit;
 
     let query;
-    let selectFields;
 
     if (type === 'color_codes') {
       query = supabase
         .from('likes')
         .select(`
+          *,
           color_codes!inner(
             *,
             created_by_user:users!color_codes_created_by_fkey(username)
           )
         `)
         .eq('user_id', req.user.id)
-        .not('color_code_id', 'is', null);
+        .eq('item_type', 'c');
     } else if (type === 'filters') {
       query = supabase
         .from('likes')
         .select(`
+          *,
           filters!inner(
             *,
             created_by_user:users!filters_created_by_fkey(username)
           )
         `)
         .eq('user_id', req.user.id)
-        .not('filter_id', 'is', null);
+        .eq('item_type', 'f');
     } else {
       return res.status(400).json({ error: 'Type must be either color_codes or filters' });
     }
@@ -208,26 +213,22 @@ export const checkLikeStatus = async (req, res) => {
       return res.status(400).json({ error: 'Invalid ID format' });
     }
 
-    let query;
+    let itemType;
     if (type === 'color_code') {
-      query = supabase
-        .from('likes')
-        .select('id')
-        .eq('user_id', req.user.id)
-        .eq('color_code_id', id)
-        .single();
+      itemType = 'c';
     } else if (type === 'filter') {
-      query = supabase
-        .from('likes')
-        .select('id')
-        .eq('user_id', req.user.id)
-        .eq('filter_id', id)
-        .single();
+      itemType = 'f';
     } else {
       return res.status(400).json({ error: 'Type must be either color_code or filter' });
     }
 
-    const { data: like, error } = await query;
+    const { data: like, error } = await supabase
+      .from('likes')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('item_type', itemType)
+      .eq('item_id', id)
+      .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
       console.error('Check like status error:', error);

@@ -22,6 +22,10 @@ export const validateHSL = (h, s, l) => {
   return h >= 0 && h <= 360 && s >= 0 && s <= 100 && l >= 0 && l <= 100;
 };
 
+export const validateCMYK = (c, m, y, k) => {
+  return c >= 0 && c <= 100 && m >= 0 && m <= 100 && y >= 0 && y <= 100 && k >= 0 && k <= 100;
+};
+
 export const sanitizeString = (str, maxLength = 255) => {
   if (typeof str !== 'string') return '';
   return str.trim().slice(0, maxLength);

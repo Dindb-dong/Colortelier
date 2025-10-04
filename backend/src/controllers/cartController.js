@@ -12,107 +12,72 @@ export const addToCart = async (req, res) => {
       return res.status(400).json({ error: 'Invalid ID format' });
     }
 
+    let itemType;
+    let tableName;
+    let foreignKey;
+
     if (type === 'color_code') {
-      // Check if color code exists
-      const { data: colorCode } = await supabase
-        .from('color_codes')
-        .select('id')
-        .eq('id', id)
-        .single();
-
-      if (!colorCode) {
-        return res.status(404).json({ error: 'Color code not found' });
-      }
-
-      // Check if already in cart
-      const { data: existingItem } = await supabase
-        .from('cart_items')
-        .select('id')
-        .eq('user_id', req.user.id)
-        .eq('color_code_id', id)
-        .single();
-
-      if (existingItem) {
-        return res.status(409).json({ error: 'Item already in cart' });
-      }
-
-      // Add to cart
-      const { data: cartItem, error } = await supabase
-        .from('cart_items')
-        .insert({
-          user_id: req.user.id,
-          color_code_id: id
-        })
-        .select(`
-          *,
-          color_codes!inner(
-            *,
-            created_by_user:users!color_codes_created_by_fkey(username)
-          )
-        `)
-        .single();
-
-      if (error) {
-        console.error('Add to cart error:', error);
-        return res.status(500).json({ error: 'Failed to add to cart' });
-      }
-
-      res.status(201).json({
-        message: 'Color code added to cart',
-        cartItem
-      });
+      itemType = 'c';
+      tableName = 'color_codes';
+      foreignKey = 'color_codes_created_by_fkey';
     } else if (type === 'filter') {
-      // Check if filter exists
-      const { data: filter } = await supabase
-        .from('filters')
-        .select('id')
-        .eq('id', id)
-        .single();
-
-      if (!filter) {
-        return res.status(404).json({ error: 'Filter not found' });
-      }
-
-      // Check if already in cart
-      const { data: existingItem } = await supabase
-        .from('cart_items')
-        .select('id')
-        .eq('user_id', req.user.id)
-        .eq('filter_id', id)
-        .single();
-
-      if (existingItem) {
-        return res.status(409).json({ error: 'Item already in cart' });
-      }
-
-      // Add to cart
-      const { data: cartItem, error } = await supabase
-        .from('cart_items')
-        .insert({
-          user_id: req.user.id,
-          filter_id: id
-        })
-        .select(`
-          *,
-          filters!inner(
-            *,
-            created_by_user:users!filters_created_by_fkey(username)
-          )
-        `)
-        .single();
-
-      if (error) {
-        console.error('Add to cart error:', error);
-        return res.status(500).json({ error: 'Failed to add to cart' });
-      }
-
-      res.status(201).json({
-        message: 'Filter added to cart',
-        cartItem
-      });
+      itemType = 'f';
+      tableName = 'filters';
+      foreignKey = 'filters_created_by_fkey';
     } else {
       return res.status(400).json({ error: 'Type must be either color_code or filter' });
     }
+
+    // Check if item exists
+    const { data: item } = await supabase
+      .from(tableName)
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (!item) {
+      return res.status(404).json({ error: `${type} not found` });
+    }
+
+    // Check if already in cart
+    const { data: existingItem } = await supabase
+      .from('cart_items')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('item_type', itemType)
+      .eq('item_id', id)
+      .single();
+
+    if (existingItem) {
+      return res.status(409).json({ error: 'Item already in cart' });
+    }
+
+    // Add to cart
+    const { data: cartItem, error } = await supabase
+      .from('cart_items')
+      .insert({
+        user_id: req.user.id,
+        item_type: itemType,
+        item_id: id
+      })
+      .select(`
+        *,
+        ${tableName}!inner(
+          *,
+          created_by_user:users!${foreignKey}(username)
+        )
+      `)
+      .single();
+
+    if (error) {
+      console.error('Add to cart error:', error);
+      return res.status(500).json({ error: 'Failed to add to cart' });
+    }
+
+    res.status(201).json({
+      message: `${type} added to cart`,
+      cartItem
+    });
   } catch (error) {
     console.error('Add to cart error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -141,9 +106,9 @@ export const getCartItems = async (req, res) => {
 
     // Filter by type if specified
     if (type === 'color_codes') {
-      query = query.not('color_code_id', 'is', null);
+      query = query.eq('item_type', 'c');
     } else if (type === 'filters') {
-      query = query.not('filter_id', 'is', null);
+      query = query.eq('item_type', 'f');
     }
 
     // Pagination
