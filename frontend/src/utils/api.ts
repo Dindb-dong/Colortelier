@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL as string
+const API_BASE_URL = import.meta.env.VITE_API_URL as string + '/api'
 
 // Get auth token from localStorage (backend JWT)
 const getAuthToken = () => {
@@ -26,10 +26,12 @@ const removeAuthToken = () => {
 
 // Public API request helper (no auth required)
 const publicApiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  console.log('API_BASE_URL:', API_BASE_URL)
-  console.log('publicApiRequest', endpoint, options)
+  console.log('🌐 API_BASE_URL:', API_BASE_URL)
+  console.log('📡 publicApiRequest', endpoint, options)
+  console.log('🔗 Full URL:', `${API_BASE_URL}${endpoint}`)
 
   if (!API_BASE_URL) {
+    console.error('❌ API_BASE_URL is not configured')
     throw new Error('API_BASE_URL is not configured')
   }
 
@@ -41,12 +43,18 @@ const publicApiRequest = async (endpoint: string, options: RequestInit = {}) => 
     },
   })
 
+  console.log('📊 Response status:', response.status)
+  console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()))
+
   if (!response.ok) {
     const error = await response.json()
+    console.error('❌ API request failed:', error)
     throw new Error(error.error || 'API request failed')
   }
 
-  return response.json()
+  const result = await response.json()
+  console.log('✅ API request successful:', result)
+  return result
 }
 
 // Authenticated API request helper (auth required)

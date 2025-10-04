@@ -70,6 +70,8 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
+    console.log('🔐 Login attempt:', { email: req.body.email, passwordLength: req.body.password?.length });
+    
     const { email, password } = req.body;
 
     // Validation
@@ -77,10 +79,12 @@ export const login = async (req, res) => {
     validateRequired(password, 'Password');
 
     if (!validateEmail(email)) {
+      console.log('❌ Invalid email format:', email);
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
     // Get user
+    console.log('🔍 Looking up user:', email.toLowerCase());
     const { data: user, error } = await supabase
       .from('users')
       .select('id, email, username, password_hash, is_admin')
@@ -88,19 +92,26 @@ export const login = async (req, res) => {
       .single();
 
     if (error || !user) {
+      console.log('❌ User not found or error:', error);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    console.log('✅ User found:', { id: user.id, email: user.email, is_admin: user.is_admin });
 
     // Verify password
     const isValidPassword = await comparePassword(password, user.password_hash);
     if (!isValidPassword) {
+      console.log('❌ Invalid password for user:', user.email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log('✅ Password verified for user:', user.email);
+
     // Generate token
     const token = generateToken(user.id);
+    console.log('🎫 Token generated for user:', user.email);
 
-    res.json({
+    const response = {
       message: 'Login successful',
       user: {
         id: user.id,
@@ -109,9 +120,19 @@ export const login = async (req, res) => {
         is_admin: user.is_admin
       },
       token
+    };
+
+    console.log('✅ Login successful, sending response:', { 
+      userId: user.id, 
+      email: user.email, 
+      is_admin: user.is_admin,
+      tokenLength: token.length 
     });
+
+    res.json(response);
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

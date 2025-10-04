@@ -24,6 +24,16 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
+
+// Enhanced logging middleware
+app.use((req, res, next) => {
+  console.log(`\n🔍 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log(`📍 Headers:`, JSON.stringify(req.headers, null, 2));
+  console.log(`📦 Body:`, JSON.stringify(req.body, null, 2));
+  console.log(`🔗 Query:`, JSON.stringify(req.query, null, 2));
+  next();
+});
+
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -54,13 +64,38 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Route handlers
-app.use('/api/auth', authRoutes);
-app.use('/api/colors', colorRoutes);
-app.use('/api/themes', themeRoutes);
-app.use('/api/filters', filterRoutes);
-app.use('/api/likes', likeRoutes);
-app.use('/api/cart', cartRoutes);
+// Route handlers with detailed logging
+console.log('🚀 Setting up routes...');
+
+app.use('/api/auth', (req, res, next) => {
+  console.log(`🔐 Auth route: ${req.method} ${req.originalUrl}`);
+  next();
+}, authRoutes);
+
+app.use('/api/colors', (req, res, next) => {
+  console.log(`🎨 Colors route: ${req.method} ${req.originalUrl}`);
+  next();
+}, colorRoutes);
+
+app.use('/api/themes', (req, res, next) => {
+  console.log(`🎭 Themes route: ${req.method} ${req.originalUrl}`);
+  next();
+}, themeRoutes);
+
+app.use('/api/filters', (req, res, next) => {
+  console.log(`🔍 Filters route: ${req.method} ${req.originalUrl}`);
+  next();
+}, filterRoutes);
+
+app.use('/api/likes', (req, res, next) => {
+  console.log(`❤️ Likes route: ${req.method} ${req.originalUrl}`);
+  next();
+}, likeRoutes);
+
+app.use('/api/cart', (req, res, next) => {
+  console.log(`🛒 Cart route: ${req.method} ${req.originalUrl}`);
+  next();
+}, cartRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -71,9 +106,44 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// 404 handler with detailed logging
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  console.log('❌ 404 - Route not found:');
+  console.log(`   Method: ${req.method}`);
+  console.log(`   URL: ${req.originalUrl}`);
+  console.log(`   Path: ${req.path}`);
+  console.log(`   Base URL: ${req.baseUrl}`);
+  console.log(`   Available routes:`);
+  console.log(`   - GET /health`);
+  console.log(`   - GET /api`);
+  console.log(`   - POST /api/auth/register`);
+  console.log(`   - POST /api/auth/login`);
+  console.log(`   - GET /api/auth/profile`);
+  console.log(`   - PUT /api/auth/profile`);
+  console.log(`   - GET /api/colors`);
+  console.log(`   - GET /api/themes`);
+  console.log(`   - GET /api/filters`);
+  console.log(`   - GET /api/likes`);
+  console.log(`   - GET /api/cart`);
+  
+  res.status(404).json({ 
+    error: 'Route not found',
+    method: req.method,
+    url: req.originalUrl,
+    availableRoutes: [
+      'GET /health',
+      'GET /api',
+      'POST /api/auth/register',
+      'POST /api/auth/login',
+      'GET /api/auth/profile',
+      'PUT /api/auth/profile',
+      'GET /api/colors',
+      'GET /api/themes',
+      'GET /api/filters',
+      'GET /api/likes',
+      'GET /api/cart'
+    ]
+  });
 });
 
 app.listen(PORT, () => {
