@@ -6,7 +6,7 @@ import { supabaseAdmin, BUCKETS } from '../config/supabase.js';
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = process.env.ALLOWED_FILE_TYPES?.split(',') || ['webp', 'xmp'];
+  const allowedTypes = process.env.ALLOWED_FILE_TYPES?.split(',') || ['webp', 'xmp', 'png', 'jpg', 'jpeg'];
   const fileExtension = file.originalname.split('.').pop().toLowerCase();
   
   if (allowedTypes.includes(fileExtension)) {
