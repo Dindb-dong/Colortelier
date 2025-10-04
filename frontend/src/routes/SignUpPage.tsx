@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/ui'
+import { authApi } from '../utils/api'
 import type { FormEvent } from 'react'
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL as string | undefined
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined
+// const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL as string | undefined // 현재 사용하지 않음
+// const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined // 현재 사용하지 않음
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[~`!@#$%^&*()_+\-={}|\[\]\\:";'<>?,.\/]).{8,16}$/
 
@@ -14,9 +15,11 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [username, setUsername] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const emailInvalid = email.length > 0 && (!email.includes('@') || !email.includes('.'))
 
   const rules = {
@@ -27,26 +30,32 @@ export default function SignUpPage() {
     length: password.length >= 8 && password.length <= 16,
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    setLoading(true)
 
-    if (!PASSWORD_REGEX.test(password)) {
-      setError('Password must be 8-16 chars, include lower/upper, number, special.')
-      return
-    }
-    if (password !== confirm) {
-      setError('Password does not match.')
-      return
-    }
-    // Demo-only: if admin email chosen, allow signup and mark as admin
-    if (ADMIN_EMAIL && ADMIN_PASSWORD && email.trim() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      loginAsAdmin(email.trim())
+    try {
+      if (!PASSWORD_REGEX.test(password)) {
+        setError('비밀번호는 8-16자, 대소문자, 숫자, 특수문자를 포함해야 합니다.')
+        return
+      }
+      if (password !== confirm) {
+        setError('비밀번호가 일치하지 않습니다.')
+        return
+      }
+
+      // 실제 백엔드 API 회원가입
+      const result = await authApi.register(email.trim(), password, username.trim() || undefined)
+
+      // 회원가입 성공 시 어드민 상태로 설정
+      loginAsAdmin(result.user.email)
       navigate('/admin', { replace: true })
-      return
+    } catch (err: any) {
+      setError(err.message || '회원가입에 실패했습니다.')
+    } finally {
+      setLoading(false)
     }
-    // Otherwise, redirect to login with filled email
-    navigate('/login', { replace: true, state: { prefillEmail: email.trim() } })
   }
 
   return (
@@ -57,6 +66,16 @@ export default function SignUpPage() {
           <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Join Colortelier</p>
         </div>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 14, padding: 24 }}>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={{ fontSize: 13, color: '#374151' }}>Username (선택사항)</span>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="사용자명"
+              style={{ padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)' }}
+            />
+          </label>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={{ fontSize: 13, color: '#374151' }}>Email</span>
             <input
@@ -121,8 +140,13 @@ export default function SignUpPage() {
               {error}
             </div>
           )}
-          <button type="submit" className="primary" style={{ padding: '10px 14px', borderRadius: 999 }}>
-            Create account
+          <button
+            type="submit"
+            className="primary"
+            style={{ padding: '10px 14px', borderRadius: 999 }}
+            disabled={loading}
+          >
+            {loading ? '계정 생성 중...' : 'Create account'}
           </button>
           <div style={{ paddingTop: 6, borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'center' }}>
             <p style={{ color: '#6b7280', fontSize: 12, margin: 0 }}>

@@ -4,6 +4,7 @@ import CreatableSelect from 'react-select/creatable'
 import type { SingleValue } from 'react-select'
 import { convertToWebpIfLarge, objectUrlFromFile } from '../utils/image'
 import { useUIStore } from '../store/ui'
+import { themeApi } from '../utils/api'
 import { type ThemeArchive } from '../../../shared/types'
 
 type Option = { value: string; label: string }
@@ -20,6 +21,7 @@ export default function ThemeArchiver() {
   const [time, setTime] = useState<string>('GD')
   const [theme, setTheme] = useState<string>('')
   const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<string>('')
 
   const domainOptions: Option[] = useMemo(() => SPcodes.domain.map((d: string) => ({ value: d.split('=')[0], label: d })), [])
   const countryOptions: Option[] = useMemo(() => SPcodes.country.map((c: string) => ({ value: c.split('=')[0], label: c })), [])
@@ -30,13 +32,33 @@ export default function ThemeArchiver() {
   const themeOptions: Option[] = useMemo(() => SPcodes.theme.map((t: string) => ({ value: t.split('=')[0], label: t })), [])
 
   const onSave = async () => {
-    if (!file) return alert('이미지를 선택해 주세요')
+    if (!file) {
+      setMessage('이미지를 선택해 주세요')
+      return
+    }
+
     setSaving(true)
+    setMessage('')
+
     try {
+      // 이미지 변환
       const converted = await convertToWebpIfLarge(file)
+
+      // 테마 코드 생성
+      const themeCode = `${domain}-${country}-${city}-${detail}-${weather}-${time}${theme ? `-${theme}` : ''}`
+
+      // 백엔드 API로 테마 등록
+      const result = await themeApi.createTheme(
+        `Theme ${themeCode}`, // 이름
+        `Generated theme with code: ${themeCode}`, // 설명
+        themeCode, // 테마 코드
+        converted // 썸네일 파일
+      )
+
+      // 로컬 스토어에도 추가 (기존 기능 유지)
       const url = objectUrlFromFile(converted)
       const payload: ThemeArchive = {
-        id: `${Date.now()}`,
+        id: result.theme.id,
         imageObjectUrl: url,
         domain,
         country,
@@ -48,8 +70,20 @@ export default function ThemeArchiver() {
         createdAt: Date.now(),
       }
       addTheme(payload)
+
+      setMessage('테마가 성공적으로 등록되었습니다!')
       setFile(null)
-      alert('Saved (local only). Backend upload pending.')
+
+      // 폼 초기화
+      setDomain('L')
+      setCountry('KR')
+      setCity('SEL')
+      setDetail('HNGD')
+      setWeather('CL')
+      setTime('GD')
+      setTheme('')
+    } catch (error: any) {
+      setMessage(`등록 실패: ${error.message}`)
     } finally {
       setSaving(false)
     }
@@ -91,9 +125,25 @@ export default function ThemeArchiver() {
         </div>
       </div>
       <div className="row">
-        <button className="primary button-cta" onClick={onSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+        <button className="primary button-cta" onClick={onSave} disabled={saving}>
+          {saving ? '등록 중...' : 'Save'}
+        </button>
       </div>
-      <p className="muted">Note: Saves locally, converts to WebP if image is large.</p>
+
+      {message && (
+        <div style={{
+          padding: '12px',
+          borderRadius: '8px',
+          backgroundColor: message.includes('성공') ? '#d1fae5' : '#fee2e2',
+          color: message.includes('성공') ? '#065f46' : '#dc2626',
+          fontSize: '14px',
+          marginTop: '12px'
+        }}>
+          {message}
+        </div>
+      )}
+
+      <p className="muted">Note: 백엔드에 업로드되고 로컬에도 저장됩니다. 큰 이미지는 WebP로 변환됩니다.</p>
     </section>
   )
 }

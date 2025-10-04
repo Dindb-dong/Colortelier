@@ -3,6 +3,7 @@ import { hexToRgb, rgbToCmyk, rgbToHex } from '../utils/color'
 import HelpModal from './HelpModal'
 import SPcodes from '../SPcodes.json'
 import CreatableSelect from 'react-select/creatable'
+import { colorApi } from '../utils/api'
 import type { SingleValue } from 'react-select'
 
 
@@ -19,6 +20,8 @@ export default function AdminColorArchiver() {
   const [time, setTime] = useState<string>('GD')
   const [theme, setTheme] = useState<string>('')
   const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<string>('')
 
   const initialDomainOptions: Option[] = useMemo(() => SPcodes.domain.map((d: string) => ({ value: d.split('=')[0], label: d })), [])
   const initialCountryOptions: Option[] = useMemo(() => SPcodes.country.map((c: string) => ({ value: c.split('=')[0], label: c })), [])
@@ -52,12 +55,86 @@ export default function AdminColorArchiver() {
   }, [domain, country, city, detail, weather, time, theme, name])
 
   const registerColor = async () => {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/colors`, {
-      method: 'POST',
-      body: JSON.stringify({ taxonomy, rgb, cmyk, name }),
-    })
-    const data = await response.json()
-    console.log(data)
+    if (!name.trim()) {
+      setMessage('색상 이름을 입력해주세요.')
+      return
+    }
+
+    setLoading(true)
+    setMessage('')
+
+    try {
+      // HSL 계산
+      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b)
+
+      // 컬러 코드 생성
+      const colorCode = `${domain}-${country}-${city}-${detail}-${weather}-${time}${theme ? `-${theme}` : ''}`
+
+      await colorApi.createColorCode({
+        color_code: colorCode,
+        hex_code: hex,
+        rgb_r: rgb.r,
+        rgb_g: rgb.g,
+        rgb_b: rgb.b,
+        cmyk_c: cmyk.c,
+        cmyk_m: cmyk.m,
+        cmyk_y: cmyk.y,
+        cmyk_k: cmyk.k,
+        hsl_h: hsl.h,
+        hsl_s: hsl.s,
+        hsl_l: hsl.l,
+        name: name.trim(),
+        description: `Generated color code: ${colorCode}`
+      })
+
+      setMessage('컬러 코드가 성공적으로 등록되었습니다!')
+
+      // 폼 초기화
+      setHex('#3366ff')
+      setName('')
+      setDomain('L')
+      setCountry('KR')
+      setCity('SEL')
+      setDetail('HNGD')
+      setWeather('CL')
+      setTime('GD')
+      setTheme('')
+    } catch (error: any) {
+      setMessage(`등록 실패: ${error.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // RGB를 HSL로 변환하는 함수
+  const rgbToHsl = (r: number, g: number, b: number) => {
+    r /= 255
+    g /= 255
+    b /= 255
+
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    let h = 0
+    let s = 0
+    const l = (max + min) / 2
+
+    if (max !== min) {
+      const d = max - min
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break
+        case g: h = (b - r) / d + 2; break
+        case b: h = (r - g) / d + 4; break
+      }
+      h /= 6
+    }
+
+    return {
+      h: Math.round(h * 360),
+      s: Math.round(s * 100),
+      l: Math.round(l * 100)
+    }
   }
 
   const copy = async () => {
@@ -184,11 +261,28 @@ export default function AdminColorArchiver() {
         <label style={{ flex: 1 }}>Generated Code
           <input value={taxonomy} readOnly />
         </label>
-        <button className="primary button-cta" onClick={registerColor}>Register</button>
+        <button
+          className="primary button-cta"
+          onClick={registerColor}
+          disabled={loading}
+        >
+          {loading ? '등록 중...' : 'Register'}
+        </button>
         <button className="primary button-cta" onClick={copy}>Copy</button>
       </div>
 
-      <p className="muted">Note: Upload/save is disabled in this frontend-only build.</p>
+      {message && (
+        <div style={{
+          padding: '12px',
+          borderRadius: '8px',
+          backgroundColor: message.includes('성공') ? '#d1fae5' : '#fee2e2',
+          color: message.includes('성공') ? '#065f46' : '#dc2626',
+          fontSize: '14px',
+          marginTop: '12px'
+        }}>
+          {message}
+        </div>
+      )}
       {isOpen && <HelpModal
         title="컬러 코드 구조"
         content="

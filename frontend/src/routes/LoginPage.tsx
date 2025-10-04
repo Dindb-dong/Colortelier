@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuthStore } from '../store/ui'
+import { authApi } from '../utils/api'
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL as string | undefined
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined
+// const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL as string | undefined // 현재 사용하지 않음
+// const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined // 현재 사용하지 않음
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const emailInvalid = email.length > 0 && (!email.includes('@') || !email.includes('.'))
 
   useEffect(() => {
@@ -23,20 +25,30 @@ export default function LoginPage() {
     }
   }, [isAdmin, location.state, navigate])
 
-  function handleSubmit(e: FormEvent, demo: boolean = false) {
+  async function handleSubmit(e: FormEvent, demo: boolean = false) {
     e.preventDefault()
     setError(null)
-    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-      setError('Admin credentials are not configured.')
-      return
-    }
-    const isAdminMatch = email.trim() === ADMIN_EMAIL && password === ADMIN_PASSWORD
-    if (isAdminMatch || demo) {
-      loginAsAdmin(email.trim())
+    setLoading(true)
+
+    try {
+      if (demo) {
+        // 데모 어드민 로그인
+        loginAsAdmin('demo@admin.com')
+        navigate('/admin', { replace: true })
+        return
+      }
+
+      // 실제 백엔드 API 로그인
+      const result = await authApi.login(email.trim(), password)
+
+      // 로그인 성공 시 어드민 상태로 설정
+      loginAsAdmin(result.user.email)
       navigate('/admin', { replace: true })
-      return
+    } catch (err: any) {
+      setError(err.message || '로그인에 실패했습니다.')
+    } finally {
+      setLoading(false)
     }
-    setError('Invalid email or password')
   }
 
   return (
@@ -80,8 +92,13 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-          <button type="submit" className="primary" style={{ padding: '10px 14px', borderRadius: 999 }}>
-            Sign in
+          <button
+            type="submit"
+            className="primary"
+            style={{ padding: '10px 14px', borderRadius: 999 }}
+            disabled={loading}
+          >
+            {loading ? '로그인 중...' : 'Sign in'}
           </button>
           <div style={{ paddingTop: 6, borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'center' }}>
             <p style={{ color: '#6b7280', fontSize: 12, margin: 0 }}>
