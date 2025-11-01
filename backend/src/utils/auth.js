@@ -21,3 +21,21 @@ export const generateToken = (userId) => {
 export const verifyToken = (token) => {
   return jwt.verify(token, process.env.JWT_SECRET);
 };
+
+export const decodeToken = (token) => {
+  // Decode token without verification (for expired tokens)
+  return jwt.decode(token);
+};
+
+export const verifyTokenIgnoreExpiry = (token) => {
+  // Verify token but ignore expiration (for refresh endpoint)
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET, { ignoreExpiration: true });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      throw error; // Still throw for invalid tokens
+    }
+    // For expired tokens, we can still decode
+    return jwt.decode(token);
+  }
+};

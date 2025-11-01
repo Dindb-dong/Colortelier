@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase.js';
-import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
+import { hashPassword, comparePassword, generateToken, verifyTokenIgnoreExpiry } from '../utils/auth.js';
 import { validateEmail, validatePassword, validateRequired, sanitizeString } from '../utils/validation.js';
 
 export const register = async (req, res) => {
@@ -187,6 +187,51 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const refreshToken = async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token required' });
+    }
+
+    // Verify token but ignore expiration
+    let decoded;
+    try {
+      decoded = verifyTokenIgnoreExpiry(token);
+    } catch (error) {
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+
+    if (!decoded || !decoded.userId) {
+      return res.status(403).json({ error: 'Invalid token payload' });
+    }
+
+    // Verify user still exists
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, username')
+      .eq('id', decoded.userId)
+      .single();
+
+    if (error || !user) {
+      return res.status(403).json({ error: 'User not found' });
+    }
+
+    // Generate new token
+    const newToken = generateToken(user.id);
+
+    res.json({
+      message: 'Token refreshed successfully',
+      token: newToken
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

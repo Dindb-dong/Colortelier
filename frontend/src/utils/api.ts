@@ -58,7 +58,7 @@ const publicApiRequest = async (endpoint: string, options: RequestInit = {}) => 
 }
 
 // Authenticated API request helper (auth required)
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+const apiRequest = async (endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<any> => {
   console.log('API_BASE_URL:', API_BASE_URL)
   console.log('apiRequest', endpoint, options)
 
@@ -80,8 +80,59 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     },
   })
 
+  // Handle token expiration (401 with TOKEN_EXPIRED code)
+  if (response.status === 401) {
+    const errorData = await response.json().catch(() => ({}))
+
+    if (errorData.code === 'TOKEN_EXPIRED' && retryCount < 1) {
+      console.log('🔄 Token expired, attempting refresh...')
+
+      try {
+        // Get new token using the expired token
+        const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        })
+
+        if (!refreshResponse.ok) {
+          const refreshError = await refreshResponse.json().catch(() => ({}))
+          console.error('❌ Token refresh failed:', refreshError)
+          removeAuthToken()
+          throw new Error('Token refresh failed. Please login again.')
+        }
+
+        const refreshData = await refreshResponse.json()
+        const newToken = refreshData.token
+
+        if (!newToken) {
+          console.error('❌ No token in refresh response')
+          removeAuthToken()
+          throw new Error('Token refresh failed. Please login again.')
+        }
+
+        console.log('✅ Token refreshed successfully')
+        setAuthToken(newToken)
+
+        // Retry the original request with new token
+        return apiRequest(endpoint, options, retryCount + 1)
+      } catch (refreshError) {
+        console.error('❌ Error during token refresh:', refreshError)
+        removeAuthToken()
+        throw refreshError
+      }
+    } else if (errorData.code === 'TOKEN_EXPIRED') {
+      // Already retried once, don't retry again
+      removeAuthToken()
+      throw new Error('Token refresh failed. Please login again.')
+    }
+  }
+
   if (!response.ok) {
-    const error = await response.json()
+    const error = await response.json().catch(() => ({ error: 'API request failed' }))
+    console.error('❌ API request failed:', error)
     throw new Error(error.error || 'API request failed')
   }
 
@@ -89,7 +140,7 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
 }
 
 // FormData API request helper (for file uploads - auth required)
-const apiRequestFormData = async (endpoint: string, formData: FormData, options: RequestInit = {}) => {
+const apiRequestFormData = async (endpoint: string, formData: FormData, options: RequestInit = {}, retryCount = 0): Promise<any> => {
   console.log('apiRequestFormData', endpoint, formData, options)
 
   if (!API_BASE_URL) {
@@ -111,8 +162,60 @@ const apiRequestFormData = async (endpoint: string, formData: FormData, options:
     body: formData,
   })
 
+  // Handle token expiration (401 with TOKEN_EXPIRED code)
+  if (response.status === 401) {
+    const errorData = await response.json().catch(() => ({}))
+
+    if (errorData.code === 'TOKEN_EXPIRED' && retryCount < 1) {
+      console.log('🔄 Token expired during file upload, attempting refresh...')
+
+      try {
+        // Get new token using the expired token
+        const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        })
+
+        if (!refreshResponse.ok) {
+          const refreshError = await refreshResponse.json().catch(() => ({}))
+          console.error('❌ Token refresh failed:', refreshError)
+          removeAuthToken()
+          throw new Error('Token refresh failed. Please login again.')
+        }
+
+        const refreshData = await refreshResponse.json()
+        const newToken = refreshData.token
+
+        if (!newToken) {
+          console.error('❌ No token in refresh response')
+          removeAuthToken()
+          throw new Error('Token refresh failed. Please login again.')
+        }
+
+        console.log('✅ Token refreshed successfully, retrying file upload')
+        setAuthToken(newToken)
+
+        // Retry the original request with new token
+        // Note: formData needs to be recreated as it may have been consumed
+        return apiRequestFormData(endpoint, formData, options, retryCount + 1)
+      } catch (refreshError) {
+        console.error('❌ Error during token refresh:', refreshError)
+        removeAuthToken()
+        throw refreshError
+      }
+    } else if (errorData.code === 'TOKEN_EXPIRED') {
+      // Already retried once, don't retry again
+      removeAuthToken()
+      throw new Error('Token refresh failed. Please login again.')
+    }
+  }
+
   if (!response.ok) {
-    const error = await response.json()
+    const error = await response.json().catch(() => ({ error: 'API request failed' }))
+    console.error('❌ API request failed:', error)
     throw new Error(error.error || 'API request failed')
   }
 
