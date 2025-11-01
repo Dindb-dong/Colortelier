@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabaseClient'
+import { likesApi } from '../utils/api'
+import { authApi } from '../utils/api'
 
 interface LikeItem {
   id: string
@@ -42,47 +43,22 @@ export default function FavoritesPage() {
   const fetchLikes = async () => {
     try {
       setLoading(true)
-      if (!supabase) {
-        setError('Supabase가 초기화되지 않았습니다.')
-        return
-      }
 
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) {
+      if (!authApi.isAuthenticated()) {
         navigate('/login')
         return
       }
 
-      let query = supabase
-        .from('likes')
-        .select(`
-          *,
-          color_codes(
-            *,
-            created_by_user:users!color_codes_created_by_fkey(username)
-          ),
-          filters(
-            *,
-            created_by_user:users!filters_created_by_fkey(username)
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (filter === 'color_codes') {
-        query = query.eq('item_type', 'c')
-      } else if (filter === 'filters') {
-        query = query.eq('item_type', 'f')
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
-      setLikes(data || [])
-    } catch (err) {
+      const type = filter === 'all' ? undefined : filter
+      const response = await likesApi.getUserLikes(type, 1, 100)
+      setLikes(response.likes || [])
+    } catch (err: any) {
       console.error('Error fetching likes:', err)
-      setError('좋아요 목록을 불러오는데 실패했습니다.')
+      if (err.message === 'Authentication required') {
+        navigate('/login')
+        return
+      }
+      setError(err.message || '좋아요 목록을 불러오는데 실패했습니다.')
     } finally {
       setLoading(false)
     }
@@ -90,22 +66,19 @@ export default function FavoritesPage() {
 
   const removeLike = async (likeId: string) => {
     try {
-      if (!supabase) {
-        setError('Supabase가 초기화되지 않았습니다.')
-        return
+      const like = likes.find(l => l.id === likeId)
+      if (!like) return
+
+      if (like.item_type === 'c' && like.color_codes) {
+        await likesApi.toggleColorLike(like.color_codes.id)
+      } else if (like.item_type === 'f' && like.filters) {
+        await likesApi.toggleFilterLike(like.filters.id)
       }
 
-      const { error } = await supabase
-        .from('likes')
-        .delete()
-        .eq('id', likeId)
-
-      if (error) throw error
-
       setLikes(prev => prev.filter(like => like.id !== likeId))
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error removing like:', err)
-      setError('좋아요를 제거하는데 실패했습니다.')
+      setError(err.message || '좋아요를 제거하는데 실패했습니다.')
     }
   }
 

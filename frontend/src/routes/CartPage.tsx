@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabaseClient'
+import { cartApi } from '../utils/api'
+import { authApi } from '../utils/api'
 
 interface CartItem {
   id: string
@@ -41,37 +42,21 @@ export default function CartPage() {
   const fetchCartItems = async () => {
     try {
       setLoading(true)
-      if (!supabase) {
-        setError('Supabase가 초기화되지 않았습니다.')
-        return
-      }
 
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) {
+      if (!authApi.isAuthenticated()) {
         navigate('/login')
         return
       }
 
-      const { data, error } = await supabase.from('cart_items').select(`
-        *,
-        color_codes(
-          *,
-          created_by_user:users!color_codes_created_by_fkey(username)
-        ),
-        filters(
-          *,
-          created_by_user:users!filters_created_by_fkey(username)
-        )
-      `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      setCartItems(data || [])
-    } catch (err) {
+      const response = await cartApi.getCartItems(1, 100)
+      setCartItems(response.cartItems || [])
+    } catch (err: any) {
       console.error('Error fetching cart items:', err)
-      setError('장바구니를 불러오는데 실패했습니다.')
+      if (err.message === 'Authentication required') {
+        navigate('/login')
+        return
+      }
+      setError(err.message || '장바구니를 불러오는데 실패했습니다.')
     } finally {
       setLoading(false)
     }
@@ -79,22 +64,11 @@ export default function CartPage() {
 
   const removeFromCart = async (cartItemId: string) => {
     try {
-      if (!supabase) {
-        setError('Supabase가 초기화되지 않았습니다.')
-        return
-      }
-
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', cartItemId)
-
-      if (error) throw error
-
+      await cartApi.removeFromCart(cartItemId)
       setCartItems(prev => prev.filter(item => item.id !== cartItemId))
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error removing from cart:', err)
-      setError('아이템을 제거하는데 실패했습니다.')
+      setError(err.message || '아이템을 제거하는데 실패했습니다.')
     }
   }
 
@@ -102,25 +76,11 @@ export default function CartPage() {
     if (!confirm('장바구니를 비우시겠습니까?')) return
 
     try {
-      if (!supabase) {
-        setError('Supabase가 초기화되지 않았습니다.')
-        return
-      }
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id)
-
-      if (error) throw error
-
+      await cartApi.clearCart()
       setCartItems([])
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error clearing cart:', err)
-      setError('장바구니를 비우는데 실패했습니다.')
+      setError(err.message || '장바구니를 비우는데 실패했습니다.')
     }
   }
 

@@ -44,7 +44,7 @@ export default function RootLayout() {
     <>
       <nav>
         {/* Desktop Layout */}
-        <div className="nav-desktop" style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div className="nav-desktop" style={{ padding: '10px 20px', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div className="row" style={{ gap: 16 }}>
             <Link to="/" aria-label="Home" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <img src="/logo.png" alt="Colortelier" style={{ width: 200, height: 40, borderRadius: 6 }} />
@@ -100,7 +100,7 @@ export default function RootLayout() {
         </div>
 
         {/* Mobile Layout */}
-        <div className="nav-mobile" style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div className="nav-mobile" style={{ padding: '10px 16px', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <button
             onClick={() => setIsMenuOpen(true)}
             aria-label="Open menu"
@@ -145,92 +145,92 @@ export default function RootLayout() {
           </div>
         </div>
 
-        {/* Mobile Navigation Modal */}
-        {isMenuOpen && (
+      </nav>
+      {/* Mobile Navigation Modal - Outside nav for proper z-index stacking */}
+      {isMenuOpen && (
+        <div
+          className="mobile-nav-modal"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 9999,
+            display: 'flex'
+          }}
+          onClick={() => setIsMenuOpen(false)}
+        >
           <div
-            className="mobile-nav-modal"
             style={{
-              position: 'fixed',
+              position: 'absolute',
               top: 0,
               left: 0,
-              width: '100%',
+              width: '280px',
               height: '100%',
-              background: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 1000,
-              display: 'flex'
+              background: 'var(--bg)',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '2px 0 8px rgba(0,0,0,0.1)'
             }}
-            onClick={() => setIsMenuOpen(false)}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '280px',
-                height: '100%',
-                background: 'var(--bg)',
-                padding: '24px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-                boxShadow: '2px 0 8px rgba(0,0,0,0.1)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>Menu</h2>
-                <button
-                  onClick={() => setIsMenuOpen(false)}
-                  aria-label="Close menu"
-                  style={{ display: 'inline-flex', padding: 8, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer' }}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: 0, margin: 0, listStyle: 'none' }}>
-                <li>
-                  <NavLink to="/" end onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
-                    Home
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/palettes" onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
-                    Color Code
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/filters" onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
-                    Photo Filter
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/about" onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
-                    About Us
-                  </NavLink>
-                </li>
-                <li style={{ marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-                  <Link to="/favorites" onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
-                    Favorites
-                  </Link>
-                </li>
-              </ul>
-              {(!isAuthed && !isAdmin) && (
-                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-                  <Link to="/login" onClick={handleNavClick} className="primary" style={{ padding: '12px 16px', borderRadius: 8, textAlign: 'center', textDecoration: 'none' }}>
-                    Login
-                  </Link>
-                  <Link to="/signup" onClick={handleNavClick} className="primary" style={{ padding: '12px 16px', borderRadius: 8, textAlign: 'center', textDecoration: 'none' }}>
-                    Signup
-                  </Link>
-                </div>
-              )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>Menu</h2>
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                aria-label="Close menu"
+                style={{ display: 'inline-flex', padding: 8, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer' }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
             </div>
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: 0, margin: 0, listStyle: 'none' }}>
+              <li>
+                <NavLink to="/" end onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
+                  Home
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/palettes" onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
+                  Color Code
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/filters" onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
+                  Photo Filter
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/about" onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
+                  About Us
+                </NavLink>
+              </li>
+              <li style={{ marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                <Link to="/favorites" onClick={handleNavClick} className="mobile-nav-link" style={{ display: 'block', padding: '12px 16px', borderRadius: 8, textDecoration: 'none', color: 'var(--fg)' }}>
+                  Favorites
+                </Link>
+              </li>
+            </ul>
+            {(!isAuthed && !isAdmin) && (
+              <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                <Link to="/login" onClick={handleNavClick} className="primary" style={{ padding: '12px 16px', borderRadius: 8, textAlign: 'center', textDecoration: 'none' }}>
+                  Login
+                </Link>
+                <Link to="/signup" onClick={handleNavClick} className="primary" style={{ padding: '12px 16px', borderRadius: 8, textAlign: 'center', textDecoration: 'none' }}>
+                  Signup
+                </Link>
+              </div>
+            )}
           </div>
-        )}
-      </nav>
+        </div>
+      )}
       <main>
         <Outlet />
       </main>

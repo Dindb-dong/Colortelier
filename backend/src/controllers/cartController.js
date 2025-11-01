@@ -101,20 +101,32 @@ export const getCartItems = async (req, res) => {
           *,
           created_by_user:users!filters_created_by_fkey(username)
         )
-      `)
+      `, { count: 'exact' })
+      .eq('user_id', req.user.id);
+
+    // Create count query with same filters
+    let countQuery = supabase
+      .from('cart_items')
+      .select('*', { count: 'exact', head: true })
       .eq('user_id', req.user.id);
 
     // Filter by type if specified
     if (type === 'color_codes') {
       query = query.eq('item_type', 'c');
+      countQuery = countQuery.eq('item_type', 'c');
     } else if (type === 'filters') {
       query = query.eq('item_type', 'f');
+      countQuery = countQuery.eq('item_type', 'f');
     }
 
-    // Pagination
+    // Get total count before pagination
+    const { count: totalCount } = await countQuery;
+
+    // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
-    const { data: cartItems, error, count } = await query;
+    const { data: cartItems, error } = await query;
+    const count = totalCount || 0;
 
     if (error) {
       console.error('Get cart items error:', error);

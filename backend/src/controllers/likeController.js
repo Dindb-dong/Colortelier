@@ -147,6 +147,7 @@ export const getUserLikes = async (req, res) => {
     const offset = (page - 1) * limit;
 
     let query;
+    let countQuery;
 
     if (type === 'color_codes') {
       query = supabase
@@ -158,6 +159,12 @@ export const getUserLikes = async (req, res) => {
             created_by_user:users!color_codes_created_by_fkey(username)
           )
         `)
+        .eq('user_id', req.user.id)
+        .eq('item_type', 'c');
+      
+      countQuery = supabase
+        .from('likes')
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', req.user.id)
         .eq('item_type', 'c');
     } else if (type === 'filters') {
@@ -172,19 +179,49 @@ export const getUserLikes = async (req, res) => {
         `)
         .eq('user_id', req.user.id)
         .eq('item_type', 'f');
+      
+      countQuery = supabase
+        .from('likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', req.user.id)
+        .eq('item_type', 'f');
     } else {
-      return res.status(400).json({ error: 'Type must be either color_codes or filters' });
+      // No type specified - return all likes
+      query = supabase
+        .from('likes')
+        .select(`
+          *,
+          color_codes(
+            *,
+            created_by_user:users!color_codes_created_by_fkey(username)
+          ),
+          filters(
+            *,
+            created_by_user:users!filters_created_by_fkey(username)
+          )
+        `)
+        .eq('user_id', req.user.id);
+      
+      countQuery = supabase
+        .from('likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', req.user.id);
     }
 
-    // Pagination
-    query = query.range(offset, offset + limit - 1);
+    // Get total count
+    const { count: totalCount } = await countQuery;
 
-    const { data: likes, error, count } = await query;
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1).order('created_at', { ascending: false });
+
+    const { data: likes, error } = await query;
 
     if (error) {
       console.error('Get user likes error:', error);
       return res.status(500).json({ error: 'Failed to fetch likes' });
     }
+
+    const count = totalCount || 0;
 
     res.json({
       likes,
