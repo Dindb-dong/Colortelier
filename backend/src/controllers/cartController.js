@@ -52,27 +52,57 @@ export const addToCart = async (req, res) => {
       return res.status(409).json({ error: 'Item already in cart' });
     }
 
-    // Add to cart
-    const { data: cartItem, error } = await supabase
+    // Add to cart - insert first
+    const { data: insertedCartItem, error: insertError } = await supabase
       .from('cart_items')
       .insert({
         user_id: req.user.id,
         item_type: itemType,
         item_id: id
       })
-      .select(`
-        *,
-        ${tableName}!inner(
-          *,
-          created_by_user:users!${foreignKey}(username)
-        )
-      `)
+      .select('*')
       .single();
 
-    if (error) {
-      console.error('Add to cart error:', error);
+    if (insertError) {
+      console.error('Add to cart error:', insertError);
       return res.status(500).json({ error: 'Failed to add to cart' });
     }
+
+    // Fetch the related item data separately since there's no direct foreign key
+    let itemData = null;
+    if (itemType === 'c') {
+      const { data: colorCode, error: colorError } = await supabase
+        .from('color_codes')
+        .select(`
+          *,
+          created_by_user:users!color_codes_created_by_fkey(username)
+        `)
+        .eq('id', id)
+        .single();
+      
+      if (!colorError && colorCode) {
+        itemData = { color_codes: colorCode };
+      }
+    } else if (itemType === 'f') {
+      const { data: filter, error: filterError } = await supabase
+        .from('filters')
+        .select(`
+          *,
+          created_by_user:users!filters_created_by_fkey(username)
+        `)
+        .eq('id', id)
+        .single();
+      
+      if (!filterError && filter) {
+        itemData = { filters: filter };
+      }
+    }
+
+    // Combine cart item with related data
+    const cartItem = {
+      ...insertedCartItem,
+      ...itemData
+    };
 
     res.status(201).json({
       message: `${type} added to cart`,
@@ -89,22 +119,12 @@ export const getCartItems = async (req, res) => {
     const { page = 1, limit = 20, type } = req.query;
     const offset = (page - 1) * limit;
 
-    let query = supabase
+    // Build base query for cart items
+    let cartQuery = supabase
       .from('cart_items')
-      .select(`
-        *,
-        color_codes(
-          *,
-          created_by_user:users!color_codes_created_by_fkey(username)
-        ),
-        filters(
-          *,
-          created_by_user:users!filters_created_by_fkey(username)
-        )
-      `, { count: 'exact' })
+      .select('*')
       .eq('user_id', req.user.id);
 
-    // Create count query with same filters
     let countQuery = supabase
       .from('cart_items')
       .select('*', { count: 'exact', head: true })
@@ -112,34 +132,113 @@ export const getCartItems = async (req, res) => {
 
     // Filter by type if specified
     if (type === 'color_codes') {
-      query = query.eq('item_type', 'c');
+      cartQuery = cartQuery.eq('item_type', 'c');
       countQuery = countQuery.eq('item_type', 'c');
     } else if (type === 'filters') {
-      query = query.eq('item_type', 'f');
+      cartQuery = cartQuery.eq('item_type', 'f');
       countQuery = countQuery.eq('item_type', 'f');
     }
 
-    // Get total count before pagination
+    // Get total count
     const { count: totalCount } = await countQuery;
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
+    // Apply pagination and ordering
+    cartQuery = cartQuery
+      .range(offset, offset + limit - 1)
+      .order('created_at', { ascending: false });
 
-    const { data: cartItems, error } = await query;
-    const count = totalCount || 0;
+    const { data: cartItems, error: cartError } = await cartQuery;
 
-    if (error) {
-      console.error('Get cart items error:', error);
+    if (cartError) {
+      console.error('Get cart items error:', cartError);
       return res.status(500).json({ error: 'Failed to fetch cart items' });
     }
 
+    if (!cartItems || cartItems.length === 0) {
+      return res.json({
+        cartItems: [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: totalCount || 0,
+          pages: Math.ceil((totalCount || 0) / limit)
+        }
+      });
+    }
+
+    // Fetch related items separately
+    const colorCodeIds = cartItems.filter(c => c.item_type === 'c').map(c => c.item_id);
+    const filterIds = cartItems.filter(c => c.item_type === 'f').map(c => c.item_id);
+
+    const cartItemsWithData = [];
+
+    // Fetch color codes if needed
+    if (colorCodeIds.length > 0 && (type === 'color_codes' || !type)) {
+      const { data: colorCodes, error: colorError } = await supabase
+        .from('color_codes')
+        .select(`
+          *,
+          created_by_user:users!color_codes_created_by_fkey(username)
+        `)
+        .in('id', colorCodeIds);
+
+      if (!colorError && colorCodes) {
+        const colorCodesMap = new Map(colorCodes.map(c => [c.id, c]));
+        cartItems.forEach(item => {
+          if (item.item_type === 'c' && colorCodesMap.has(item.item_id)) {
+            cartItemsWithData.push({
+              ...item,
+              color_codes: colorCodesMap.get(item.item_id)
+            });
+          }
+        });
+      }
+    }
+
+    // Fetch filters if needed
+    if (filterIds.length > 0 && (type === 'filters' || !type)) {
+      const { data: filters, error: filterError } = await supabase
+        .from('filters')
+        .select(`
+          *,
+          created_by_user:users!filters_created_by_fkey(username)
+        `)
+        .in('id', filterIds);
+
+      if (!filterError && filters) {
+        const filtersMap = new Map(filters.map(f => [f.id, f]));
+        cartItems.forEach(item => {
+          if (item.item_type === 'f' && filtersMap.has(item.item_id)) {
+            cartItemsWithData.push({
+              ...item,
+              filters: filtersMap.get(item.item_id)
+            });
+          }
+        });
+      }
+    }
+
+    // If type is specified, return only that type. Otherwise merge both.
+    let resultCartItems;
+    if (type === 'color_codes') {
+      resultCartItems = cartItemsWithData.filter(c => c.item_type === 'c');
+    } else if (type === 'filters') {
+      resultCartItems = cartItemsWithData.filter(c => c.item_type === 'f');
+    } else {
+      // Merge both types, maintaining order
+      resultCartItems = cartItems.map(item => {
+        const withData = cartItemsWithData.find(c => c.id === item.id);
+        return withData || item;
+      });
+    }
+
     res.json({
-      cartItems,
+      cartItems: resultCartItems,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: count,
-        pages: Math.ceil(count / limit)
+        total: totalCount || 0,
+        pages: Math.ceil((totalCount || 0) / limit)
       }
     });
   } catch (error) {

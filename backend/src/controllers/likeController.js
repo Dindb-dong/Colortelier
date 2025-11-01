@@ -146,90 +146,126 @@ export const getUserLikes = async (req, res) => {
     const { type, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
 
-    let query;
-    let countQuery;
+    // Build base query for likes
+    let likesQuery = supabase
+      .from('likes')
+      .select('*')
+      .eq('user_id', req.user.id);
 
+    let countQuery = supabase
+      .from('likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', req.user.id);
+
+    // Filter by type if specified
     if (type === 'color_codes') {
-      query = supabase
-        .from('likes')
-        .select(`
-          *,
-          color_codes!inner(
-            *,
-            created_by_user:users!color_codes_created_by_fkey(username)
-          )
-        `)
-        .eq('user_id', req.user.id)
-        .eq('item_type', 'c');
-      
-      countQuery = supabase
-        .from('likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', req.user.id)
-        .eq('item_type', 'c');
+      likesQuery = likesQuery.eq('item_type', 'c');
+      countQuery = countQuery.eq('item_type', 'c');
     } else if (type === 'filters') {
-      query = supabase
-        .from('likes')
-        .select(`
-          *,
-          filters!inner(
-            *,
-            created_by_user:users!filters_created_by_fkey(username)
-          )
-        `)
-        .eq('user_id', req.user.id)
-        .eq('item_type', 'f');
-      
-      countQuery = supabase
-        .from('likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', req.user.id)
-        .eq('item_type', 'f');
-    } else {
-      // No type specified - return all likes
-      query = supabase
-        .from('likes')
-        .select(`
-          *,
-          color_codes(
-            *,
-            created_by_user:users!color_codes_created_by_fkey(username)
-          ),
-          filters(
-            *,
-            created_by_user:users!filters_created_by_fkey(username)
-          )
-        `)
-        .eq('user_id', req.user.id);
-      
-      countQuery = supabase
-        .from('likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', req.user.id);
+      likesQuery = likesQuery.eq('item_type', 'f');
+      countQuery = countQuery.eq('item_type', 'f');
     }
 
     // Get total count
     const { count: totalCount } = await countQuery;
 
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1).order('created_at', { ascending: false });
+    // Apply pagination and ordering
+    likesQuery = likesQuery
+      .range(offset, offset + limit - 1)
+      .order('created_at', { ascending: false });
 
-    const { data: likes, error } = await query;
+    const { data: likes, error: likesError } = await likesQuery;
 
-    if (error) {
-      console.error('Get user likes error:', error);
+    if (likesError) {
+      console.error('Get user likes error:', likesError);
       return res.status(500).json({ error: 'Failed to fetch likes' });
     }
 
-    const count = totalCount || 0;
+    if (!likes || likes.length === 0) {
+      return res.json({
+        likes: [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: totalCount || 0,
+          pages: Math.ceil((totalCount || 0) / limit)
+        }
+      });
+    }
+
+    // Fetch related items separately
+    const colorCodeIds = likes.filter(l => l.item_type === 'c').map(l => l.item_id);
+    const filterIds = likes.filter(l => l.item_type === 'f').map(l => l.item_id);
+
+    const likesWithData = [];
+
+    // Fetch color codes if needed
+    if (colorCodeIds.length > 0 && (type === 'color_codes' || !type)) {
+      const { data: colorCodes, error: colorError } = await supabase
+        .from('color_codes')
+        .select(`
+          *,
+          created_by_user:users!color_codes_created_by_fkey(username)
+        `)
+        .in('id', colorCodeIds);
+
+      if (!colorError && colorCodes) {
+        const colorCodesMap = new Map(colorCodes.map(c => [c.id, c]));
+        likes.forEach(like => {
+          if (like.item_type === 'c' && colorCodesMap.has(like.item_id)) {
+            likesWithData.push({
+              ...like,
+              color_codes: colorCodesMap.get(like.item_id)
+            });
+          }
+        });
+      }
+    }
+
+    // Fetch filters if needed
+    if (filterIds.length > 0 && (type === 'filters' || !type)) {
+      const { data: filters, error: filterError } = await supabase
+        .from('filters')
+        .select(`
+          *,
+          created_by_user:users!filters_created_by_fkey(username)
+        `)
+        .in('id', filterIds);
+
+      if (!filterError && filters) {
+        const filtersMap = new Map(filters.map(f => [f.id, f]));
+        likes.forEach(like => {
+          if (like.item_type === 'f' && filtersMap.has(like.item_id)) {
+            likesWithData.push({
+              ...like,
+              filters: filtersMap.get(like.item_id)
+            });
+          }
+        });
+      }
+    }
+
+    // If type is specified, return only that type. Otherwise merge both.
+    let resultLikes;
+    if (type === 'color_codes') {
+      resultLikes = likesWithData.filter(l => l.item_type === 'c');
+    } else if (type === 'filters') {
+      resultLikes = likesWithData.filter(l => l.item_type === 'f');
+    } else {
+      // Merge both types, maintaining order
+      resultLikes = likes.map(like => {
+        const withData = likesWithData.find(l => l.id === like.id);
+        return withData || like;
+      });
+    }
 
     res.json({
-      likes,
+      likes: resultLikes,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: count,
-        pages: Math.ceil(count / limit)
+        total: totalCount || 0,
+        pages: Math.ceil((totalCount || 0) / limit)
       }
     });
   } catch (error) {
