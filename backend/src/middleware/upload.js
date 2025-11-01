@@ -24,9 +24,56 @@ export const upload = multer({
   }
 });
 
+// Helper function to check if bucket exists
+const checkBucketExists = async (bucketName) => {
+  try {
+    const { data, error } = await supabaseAdmin.storage.listBuckets();
+    if (error) {
+      console.error('Error listing buckets:', error);
+      return false;
+    }
+    return data?.some(bucket => bucket.name === bucketName) || false;
+  } catch (error) {
+    console.error('Error checking bucket existence:', error);
+    return false;
+  }
+};
+
+// Helper function to create bucket if it doesn't exist
+const ensureBucketExists = async (bucketName) => {
+  try {
+    const exists = await checkBucketExists(bucketName);
+    if (!exists) {
+      console.log(`Creating storage bucket "${bucketName}"...`);
+      const { data, error } = await supabaseAdmin.storage.createBucket(bucketName, {
+        public: true, // Make bucket public for file access
+      });
+
+      if (error) {
+        console.error(`Failed to create bucket "${bucketName}":`, error);
+        throw new Error(
+          `Storage bucket "${bucketName}" not found and could not be created automatically: ${error.message}. ` +
+          `Please create it manually in Supabase Storage settings. ` +
+          `Go to your Supabase project > Storage > Create bucket and name it "${bucketName}". ` +
+          `Make sure to set it as public.`
+        );
+      }
+      console.log(`✅ Storage bucket "${bucketName}" created successfully`);
+      return true;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error ensuring bucket exists:', error);
+    throw error;
+  }
+};
+
 // Helper function to upload file to Supabase Storage
 export const uploadToSupabase = async (file, bucketName, folder = '') => {
   try {
+    // Ensure bucket exists (create if it doesn't)
+    await ensureBucketExists(bucketName);
+
     const fileExtension = file.originalname.split('.').pop();
     const fileName = `${folder}/${uuidv4()}.${fileExtension}`;
     
@@ -38,6 +85,13 @@ export const uploadToSupabase = async (file, bucketName, folder = '') => {
       });
 
     if (error) {
+      // Provide more detailed error messages
+      if (error.message.includes('Bucket not found') || error.message.includes('not found')) {
+        throw new Error(
+          `Storage bucket "${bucketName}" not found. Please create it in Supabase Storage settings. ` +
+          `Go to your Supabase project > Storage > Create bucket and name it "${bucketName}".`
+        );
+      }
       throw new Error(`Upload failed: ${error.message}`);
     }
 
