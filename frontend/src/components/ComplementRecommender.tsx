@@ -13,20 +13,20 @@ export default function ComplementRecommender() {
   )
 
   return (
-    <section className="container">
+    <section className="container complement-recommender">
       <h2>Complement Colors</h2>
       <label>Base Color
         <input value={`#${normalizeHex(hex)}`} onChange={(e) => setHex(e.target.value)} />
       </label>
       <div className="card">
         <h3>Free (4)</h3>
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <div className="complement-grid complement-grid-free">
           {free.map(swatch)}
         </div>
       </div>
       <div className="card">
         <h3>Premium Preview (16)</h3>
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(8, 1fr)' }}>
+        <div className="complement-grid complement-grid-premium">
           {paid.map(swatch)}
         </div>
         <p className="muted">Unlock details via purchase (backend pending).</p>

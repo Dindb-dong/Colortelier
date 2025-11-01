@@ -98,10 +98,10 @@ export default function FilterArchiver() {
   }
 
   return (
-    <section className="container">
+    <section className="container filter-archiver">
       <h2>Filter Archiving</h2>
       <div className="grid auto">
-        <div className="grid auto" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="filter-image-grid">
           <label>Before
             {beforeFile && <img src={objectUrlFromFile(beforeFile)} alt="Before" style={{ width: '100%', borderRadius: 10, border: '1px solid var(--border)' }} />}
             <input type="file" accept="image/*" onChange={(e) => setBeforeFile(e.target.files?.[0] ?? null)} />
@@ -110,7 +110,7 @@ export default function FilterArchiver() {
             {afterFile && <img src={objectUrlFromFile(afterFile)} alt="After" style={{ width: '100%', borderRadius: 10, border: '1px solid var(--border)' }} />}
             <input type="file" accept="image/*" onChange={(e) => setAfterFile(e.target.files?.[0] ?? null)} />
           </label>
-          <label>Filter File (.xmp)
+          <label className="filter-file-label">Filter File (.xmp)
             <input type="file" accept=".xmp" onChange={handleFilterFileChange} />
           </label>
         </div>

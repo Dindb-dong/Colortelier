@@ -44,6 +44,29 @@ code { background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px;
 .setting-label { font-size: 14px; color: var(--muted); }
 .setting-value { font-size: 14px; font-weight: 600; color: var(--fg); }
 
+/* Admin Color Archiver */
+.admin-color-archiver { width: 100%; max-width: 100%; overflow-x: hidden; }
+.admin-color-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.admin-color-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.selected-theme-badge { padding: 8px 12px; border-radius: 8px; background-color: #e0f2fe; color: #0369a1; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.selected-theme-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.theme-clear-btn { background: none; border: none; color: #0369a1; cursor: pointer; font-size: 16px; padding: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.admin-color-preview { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.color-swatch { width: 72px; height: 72px; border-radius: 12px; border: 1px solid var(--border); flex-shrink: 0; }
+.color-info { display: flex; gap: 20px; flex-wrap: wrap; }
+.admin-color-actions-bottom { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.generated-code-label { flex: 1; min-width: 200px; }
+.admin-color-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* Complement Recommender */
+.complement-grid { display: grid; gap: 12px; }
+.complement-grid-free { grid-template-columns: repeat(4, 1fr); }
+.complement-grid-premium { grid-template-columns: repeat(8, 1fr); }
+
+/* Filter Archiver */
+.filter-image-grid { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+.filter-file-label { grid-column: 1 / -1; }
+
 /* Mobile Navigation */
 .nav-desktop { 
   display: flex; 
@@ -120,6 +143,63 @@ code { background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px;
   }
   .admin-page .admin-header h1 {
     font-size: 24px;
+  }
+  
+  /* Admin Color Archiver Mobile */
+  .admin-color-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .admin-color-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .selected-theme-badge {
+    max-width: 100%;
+  }
+  .selected-theme-text {
+    max-width: calc(100vw - 120px);
+  }
+  .admin-color-preview {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .color-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .admin-color-actions-bottom {
+    flex-direction: column;
+  }
+  .generated-code-label {
+    width: 100%;
+    min-width: unset;
+  }
+  .admin-color-buttons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .grid.auto {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Complement Recommender Mobile */
+  .complement-grid-free {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .complement-grid-premium {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  
+  /* Filter Archiver Mobile */
+  .filter-image-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Filter Settings Display Mobile */
+  .settings-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 

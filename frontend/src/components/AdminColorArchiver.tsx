@@ -188,38 +188,17 @@ export default function AdminColorArchiver({ selectedTheme, onThemeClear }: Prop
   }
 
   return (
-    <section className="container">
-      <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+    <section className="container admin-color-archiver">
+      <div className="admin-color-header">
         <h2>Color Archiving</h2>
-        <div className="row" style={{ gap: 8 }}>
+        <div className="admin-color-actions">
           {selectedTheme && (
-            <div style={{
-              padding: '8px 12px',
-              borderRadius: '8px',
-              backgroundColor: '#e0f2fe',
-              color: '#0369a1',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}>
-              <span>✓ 선택된 테마: {selectedTheme.domain}-{selectedTheme.country}-{selectedTheme.city}</span>
+            <div className="selected-theme-badge">
+              <span className="selected-theme-text">✓ 선택된 테마: {selectedTheme.domain}-{selectedTheme.country}-{selectedTheme.city}</span>
               {onThemeClear && (
                 <button
                   onClick={onThemeClear}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#0369a1',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    padding: 0,
-                    width: '20px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                  className="theme-clear-btn"
                   title="테마 선택 해제"
                 >
                   ×
@@ -315,26 +294,28 @@ export default function AdminColorArchiver({ selectedTheme, onThemeClear }: Prop
         </label>
       </div>
 
-      <div className="row" style={{ alignItems: 'center' }}>
-        <div style={{ width: 72, height: 72, borderRadius: 12, border: '1px solid var(--border)', background: rgbToHex(rgb) }} />
-        <div className="row" style={{ gap: 20 }}>
+      <div className="admin-color-preview">
+        <div className="color-swatch" style={{ background: rgbToHex(rgb) }} />
+        <div className="color-info">
           <div><b>RGB</b>: {rgb.r}, {rgb.g}, {rgb.b}</div>
           <div><b>CMYK</b>: {cmyk.c}% {cmyk.m}% {cmyk.y}% {cmyk.k}%</div>
         </div>
       </div>
 
-      <div className="row">
-        <label style={{ flex: 1 }}>Generated Code
+      <div className="admin-color-actions-bottom">
+        <label className="generated-code-label">Generated Code
           <input value={taxonomy} readOnly />
         </label>
-        <button
-          className="primary button-cta"
-          onClick={registerColor}
-          disabled={loading}
-        >
-          {loading ? '등록 중...' : 'Register'}
-        </button>
-        <button className="primary button-cta" onClick={copy}>Copy</button>
+        <div className="admin-color-buttons">
+          <button
+            className="primary button-cta"
+            onClick={registerColor}
+            disabled={loading}
+          >
+            {loading ? '등록 중...' : 'Register'}
+          </button>
+          <button className="primary button-cta" onClick={copy}>Copy</button>
+        </div>
       </div>
 
       {message && (
