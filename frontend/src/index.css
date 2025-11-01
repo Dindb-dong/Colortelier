@@ -95,4 +95,49 @@ code { background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px;
   .mobile-nav-modal .mobile-nav-link {
     transition: background 0.2s ease;
   }
+  
+  /* Admin Page Mobile Styles */
+  .admin-tabs-desktop {
+    display: none !important;
+  }
+  .admin-tabs-mobile {
+    display: flex !important;
+  }
+  
+  /* Admin Page Responsive Layout */
+  .admin-page {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+  .admin-page .admin-content {
+    grid-template-columns: 1fr !important;
+    overflow-x: hidden !important;
+  }
+  .admin-page .admin-header {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    overflow-x: hidden !important;
+  }
+  .admin-page .admin-header h1 {
+    font-size: 24px;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-tabs-mobile {
+    display: none !important;
+  }
+  .admin-page .admin-header .admin-tabs-desktop {
+    display: none !important;
+  }
+  .admin-page {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
+  .admin-page .admin-content {
+    overflow-x: hidden !important;
+  }
+  .admin-page .admin-header {
+    overflow-x: hidden !important;
+  }
 }
