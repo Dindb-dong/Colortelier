@@ -43,3 +43,46 @@ code { background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px;
 .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
 .setting-label { font-size: 14px; color: var(--muted); }
 .setting-value { font-size: 14px; font-weight: 600; color: var(--fg); }
+
+/* Mobile Navigation */
+.nav-desktop { display: flex; }
+.nav-mobile { display: none; }
+
+@media (max-width: 767px) {
+  .nav-desktop { display: none; }
+  .nav-mobile { display: flex; }
+  main { padding: 16px; }
+  
+  /* Mobile nav modal */
+  .mobile-nav-modal {
+    animation: fadeIn 0.2s ease-out;
+  }
+  
+  .mobile-nav-modal > div {
+    animation: slideIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+  
+  /* Mobile nav modal active state */
+  .mobile-nav-modal .mobile-nav-link.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  
+  .mobile-nav-modal .mobile-nav-link:hover {
+    background: var(--surface);
+  }
+  
+  .mobile-nav-modal .mobile-nav-link {
+    transition: background 0.2s ease;
+  }
+}
