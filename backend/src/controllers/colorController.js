@@ -104,9 +104,8 @@ export const getColorCodes = async (req, res) => {
       .from('color_codes')
       .select(`
         *,
-        created_by_user:users!color_codes_created_by_fkey(username),
-        likes_count:likes(count)
-      `);
+        created_by_user:users!color_codes_created_by_fkey(username)
+      `, { count: 'exact' });
 
     // Search filter
     if (search) {
@@ -129,13 +128,36 @@ export const getColorCodes = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch color codes' });
     }
 
+    // Get likes count for all color codes
+    if (colorCodes && colorCodes.length > 0) {
+      const colorIds = colorCodes.map(c => c.id);
+      const { data: likesData, error: likesError } = await supabase
+        .from('likes')
+        .select('item_id')
+        .eq('item_type', 'c')
+        .in('item_id', colorIds);
+
+      if (!likesError && likesData) {
+        // Count likes per color code
+        const likesCountMap = {};
+        likesData.forEach(like => {
+          likesCountMap[like.item_id] = (likesCountMap[like.item_id] || 0) + 1;
+        });
+
+        // Add likes_count to each color code
+        colorCodes.forEach(color => {
+          color.likes_count = likesCountMap[color.id] || 0;
+        });
+      }
+    }
+
     res.json({
-      colorCodes,
+      colorCodes: colorCodes || [],
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: count,
-        pages: Math.ceil(count / limit)
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
       }
     });
   } catch (error) {
@@ -152,14 +174,26 @@ export const getColorCodeById = async (req, res) => {
       .from('color_codes')
       .select(`
         *,
-        created_by_user:users!color_codes_created_by_fkey(username),
-        likes_count:likes(count)
+        created_by_user:users!color_codes_created_by_fkey(username)
       `)
       .eq('id', id)
       .single();
 
     if (error || !colorCode) {
       return res.status(404).json({ error: 'Color code not found' });
+    }
+
+    // Get likes count
+    const { count, error: likesError } = await supabase
+      .from('likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('item_type', 'c')
+      .eq('item_id', id);
+
+    if (!likesError) {
+      colorCode.likes_count = count || 0;
+    } else {
+      colorCode.likes_count = 0;
     }
 
     res.json({ colorCode });

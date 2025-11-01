@@ -71,9 +71,8 @@ export const getFilters = async (req, res) => {
       .from('filters')
       .select(`
         *,
-        created_by_user:users!filters_created_by_fkey(username),
-        likes_count:likes(count)
-      `);
+        created_by_user:users!filters_created_by_fkey(username)
+      `, { count: 'exact' });
 
     // Search filter
     if (search) {
@@ -96,13 +95,36 @@ export const getFilters = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch filters' });
     }
 
+    // Get likes count for all filters
+    if (filters && filters.length > 0) {
+      const filterIds = filters.map(f => f.id);
+      const { data: likesData, error: likesError } = await supabase
+        .from('likes')
+        .select('item_id')
+        .eq('item_type', 'f')
+        .in('item_id', filterIds);
+
+      if (!likesError && likesData) {
+        // Count likes per filter
+        const likesCountMap = {};
+        likesData.forEach(like => {
+          likesCountMap[like.item_id] = (likesCountMap[like.item_id] || 0) + 1;
+        });
+
+        // Add likes_count to each filter
+        filters.forEach(filter => {
+          filter.likes_count = likesCountMap[filter.id] || 0;
+        });
+      }
+    }
+
     res.json({
-      filters,
+      filters: filters || [],
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: count,
-        pages: Math.ceil(count / limit)
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
       }
     });
   } catch (error) {
@@ -119,14 +141,26 @@ export const getFilterById = async (req, res) => {
       .from('filters')
       .select(`
         *,
-        created_by_user:users!filters_created_by_fkey(username),
-        likes_count:likes(count)
+        created_by_user:users!filters_created_by_fkey(username)
       `)
       .eq('id', id)
       .single();
 
     if (error || !filter) {
       return res.status(404).json({ error: 'Filter not found' });
+    }
+
+    // Get likes count
+    const { count, error: likesError } = await supabase
+      .from('likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('item_type', 'f')
+      .eq('item_id', id);
+
+    if (!likesError) {
+      filter.likes_count = count || 0;
+    } else {
+      filter.likes_count = 0;
     }
 
     res.json({ filter });
