@@ -25,8 +25,15 @@ app.use(cors({
   credentials: true
 }));
 
-// Enhanced logging middleware
+// Enhanced logging middleware (skip detailed logs for health checks)
 app.use((req, res, next) => {
+  // Skip detailed logging for health check requests
+  if (req.path === '/health') {
+    // Simple log for health checks
+    console.log('✅ Health check OK');
+    return next();
+  }
+  
   console.log(`\n🔍 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   console.log(`📍 Headers:`, JSON.stringify(req.headers, null, 2));
   console.log(`📦 Body:`, JSON.stringify(req.body, null, 2));
@@ -34,7 +41,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(morgan('combined'));
+// Skip morgan logging for health checks
+app.use(morgan('combined', {
+  skip: (req, res) => req.path === '/health'
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
