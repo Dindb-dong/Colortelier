@@ -34,15 +34,29 @@ export default function ColorDetailPage() {
 
   const checkLikeStatus = async () => {
     try {
+      // Check if user is authenticated before checking like status
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        setIsLiked(false)
+        return
+      }
       const response = await likesApi.checkLikeStatus('color_code', id!)
       setIsLiked(response.liked)
     } catch (err) {
       console.error('Error checking like status:', err)
+      // If error (e.g., not authenticated), default to not liked
+      setIsLiked(false)
     }
   }
 
   const handleAddToCart = async () => {
     if (!id || actionLoading) return
+
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      alert('로그인이 필요한 기능입니다.')
+      return
+    }
 
     try {
       setActionLoading(true)
@@ -58,6 +72,12 @@ export default function ColorDetailPage() {
 
   const handleToggleLike = async () => {
     if (!id || actionLoading) return
+
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      alert('로그인이 필요한 기능입니다.')
+      return
+    }
 
     try {
       setActionLoading(true)

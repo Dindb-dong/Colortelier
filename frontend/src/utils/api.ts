@@ -57,6 +57,38 @@ const publicApiRequest = async (endpoint: string, options: RequestInit = {}) => 
   return result
 }
 
+// Optional authenticated API request helper (auth optional - uses token if available)
+const optionalApiRequest = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
+  console.log('🌐 optionalApiRequest', endpoint, options)
+
+  if (!API_BASE_URL) {
+    throw new Error('API_BASE_URL is not configured')
+  }
+
+  const token = getAuthToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'API request failed' }))
+    console.error('❌ API request failed:', error)
+    throw new Error(error.error || 'API request failed')
+  }
+
+  return response.json()
+}
+
 // Authenticated API request helper (auth required)
 const apiRequest = async (endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<any> => {
   console.log('API_BASE_URL:', API_BASE_URL)
@@ -394,11 +426,11 @@ export const colorApi = {
       order,
     })
     if (search) params.append('search', search)
-    return apiRequest(`/colors?${params}`)
+    return optionalApiRequest(`/colors?${params}`)
   },
 
   getColorCodeById: async (id: string) => {
-    return apiRequest(`/colors/${id}`)
+    return optionalApiRequest(`/colors/${id}`)
   },
 
   createColorCode: async (colorData: any) => {
@@ -433,12 +465,12 @@ export const filterApi = {
       order,
     })
     if (search) params.append('search', search)
-    return apiRequest(`/filters?${params}`)
+    return optionalApiRequest(`/filters?${params}`)
   },
 
   // 필터 상세 조회
   getFilterById: async (id: string) => {
-    return apiRequest(`/filters/${id}`)
+    return optionalApiRequest(`/filters/${id}`)
   },
 
   // 필터 생성 (어드민)
