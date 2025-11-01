@@ -1,15 +1,20 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { hexToRgb, rgbToCmyk, rgbToHex } from '../utils/color'
 import HelpModal from './HelpModal'
 import SPcodes from '../SPcodes.json'
 import CreatableSelect from 'react-select/creatable'
 import { colorApi } from '../utils/api'
 import type { SingleValue } from 'react-select'
-
+import type { ThemeArchive } from '../../../shared/types'
 
 type Option = { value: string; label: string }
 
-export default function AdminColorArchiver() {
+interface Props {
+  selectedTheme?: ThemeArchive | null
+  onThemeClear?: () => void
+}
+
+export default function AdminColorArchiver({ selectedTheme, onThemeClear }: Props) {
   const [hex, setHex] = useState('#3366ff')
   const [name, setName] = useState('')
   const [domain, setDomain] = useState<string>('L')
@@ -39,6 +44,19 @@ export default function AdminColorArchiver() {
   const [timeOptions, setTimeOptions] = useState<Option[]>(initialTimeOptions)
   const [themeOptions, setThemeOptions] = useState<Option[]>(initialThemeOptions)
 
+  // 선택된 테마가 변경되면 입력 필드 자동 채우기
+  useEffect(() => {
+    if (selectedTheme) {
+      setDomain(selectedTheme.domain || 'L')
+      setCountry(selectedTheme.country || 'KR')
+      setCity(selectedTheme.city || 'SEL')
+      setDetail(selectedTheme.detail || 'HNGD')
+      setWeather(selectedTheme.weather || 'CL')
+      setTime(selectedTheme.time || 'GD')
+      setTheme(selectedTheme.theme || '')
+    }
+  }, [selectedTheme])
+
   const rgb = useMemo(() => hexToRgb(hex), [hex])
   const cmyk = useMemo(() => rgbToCmyk(rgb), [rgb])
   const taxonomy = useMemo(() => {
@@ -58,6 +76,14 @@ export default function AdminColorArchiver() {
     if (!name.trim()) {
       setMessage('색상 이름을 입력해주세요.')
       return
+    }
+
+    // 테마가 선택되지 않았으면 확인 다이얼로그 표시
+    if (!selectedTheme) {
+      const confirmed = window.confirm('테마 선택 없이 컬러코드만 업로드하시겠습니까?')
+      if (!confirmed) {
+        return
+      }
     }
 
     setLoading(true)
@@ -92,13 +118,16 @@ export default function AdminColorArchiver() {
       // 폼 초기화
       setHex('#3366ff')
       setName('')
-      setDomain('L')
-      setCountry('KR')
-      setCity('SEL')
-      setDetail('HNGD')
-      setWeather('CL')
-      setTime('GD')
-      setTheme('')
+      // 테마가 선택되어 있으면 그대로 유지, 아니면 기본값으로
+      if (!selectedTheme) {
+        setDomain('L')
+        setCountry('KR')
+        setCity('SEL')
+        setDetail('HNGD')
+        setWeather('CL')
+        setTime('GD')
+        setTheme('')
+      }
     } catch (error: any) {
       setMessage(`등록 실패: ${error.message}`)
     } finally {
@@ -160,9 +189,46 @@ export default function AdminColorArchiver() {
 
   return (
     <section className="container">
-      <div className="row" style={{ alignItems: 'center' }}>
+      <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
         <h2>Color Archiving</h2>
-        <button className="primary button-cta" onClick={openHelpModal}>Help</button>
+        <div className="row" style={{ gap: 8 }}>
+          {selectedTheme && (
+            <div style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              backgroundColor: '#e0f2fe',
+              color: '#0369a1',
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              <span>✓ 선택된 테마: {selectedTheme.domain}-{selectedTheme.country}-{selectedTheme.city}</span>
+              {onThemeClear && (
+                <button
+                  onClick={onThemeClear}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0369a1',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    padding: 0,
+                    width: '20px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="테마 선택 해제"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          )}
+          <button className="primary button-cta" onClick={openHelpModal}>Help</button>
+        </div>
       </div>
 
       <div className="grid auto">
