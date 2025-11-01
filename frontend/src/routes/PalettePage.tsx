@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useUIStore } from '../store/ui'
-import { colorApi } from '../utils/api'
+import { colorApi, themeApi } from '../utils/api'
 import ColorCard from '../components/ColorCard'
 
 interface ColorCode {
@@ -15,9 +15,17 @@ interface ColorCode {
   }
 }
 
+interface Theme {
+  id: string
+  theme_code: string
+  thumbnail_url: string
+  name?: string
+}
+
 interface ColorGroup {
   colorCode: string
   colors: ColorCode[]
+  theme?: Theme
 }
 
 export default function PalettePage() {
@@ -25,6 +33,7 @@ export default function PalettePage() {
   const [q, setQ] = useState('')
   const [colorCodes, setColorCodes] = useState<ColorCode[]>([])
   const [colorGroups, setColorGroups] = useState<ColorGroup[]>([])
+  const [themes, setThemes] = useState<Theme[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const location = useLocation() as any
@@ -34,6 +43,19 @@ export default function PalettePage() {
     fetchColorCodes()
   }, [q])
 
+  // 테마 목록 불러오기
+  useEffect(() => {
+    const fetchThemes = async () => {
+      try {
+        const response = await themeApi.getThemes(1, 100)
+        setThemes(response.themes || [])
+      } catch (err) {
+        console.error('Error fetching themes:', err)
+      }
+    }
+    fetchThemes()
+  }, [])
+
   // 컬러 코드의 필수 부분만 추출 (L-KR-SEL-HNGD-CL-GD-SK -> L-KR-SEL-HNGD-CL-GD)
   const getBaseColorCode = (colorCode: string): string => {
     const parts = colorCode.split('-')
@@ -42,7 +64,7 @@ export default function PalettePage() {
     return parts.slice(0, 6).join('-')
   }
 
-  // colorCodes가 변경되면 그룹화
+  // colorCodes와 themes가 변경되면 그룹화 및 테마 매칭
   useEffect(() => {
     if (colorCodes.length > 0) {
       const grouped = colorCodes.reduce((acc, color) => {
@@ -55,10 +77,19 @@ export default function PalettePage() {
         return acc
       }, {} as Record<string, ColorCode[]>)
 
-      const groups: ColorGroup[] = Object.entries(grouped).map(([colorCode, colors]) => ({
-        colorCode,
-        colors,
-      }))
+      const groups: ColorGroup[] = Object.entries(grouped).map(([colorCode, colors]) => {
+        // 같은 baseColorCode를 가진 테마 찾기
+        const matchingTheme = themes.find(theme => {
+          const themeBaseCode = getBaseColorCode(theme.theme_code)
+          return themeBaseCode === colorCode
+        })
+
+        return {
+          colorCode,
+          colors,
+          theme: matchingTheme,
+        }
+      })
 
       // 컬러 개수가 많은 순서로 정렬 (선택사항)
       groups.sort((a, b) => b.colors.length - a.colors.length)
@@ -67,7 +98,7 @@ export default function PalettePage() {
     } else {
       setColorGroups([])
     }
-  }, [colorCodes])
+  }, [colorCodes, themes])
 
   const fetchColorCodes = async () => {
     try {
@@ -195,16 +226,56 @@ export default function PalettePage() {
                   {group.colors.length}개의 색상
                 </span>
               </div>
-              <div className="grid auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
-                {group.colors.map((colorCode) => (
-                  <ColorCard
-                    key={colorCode.id}
-                    hex={colorCode.hex_code}
-                    name={colorCode.name || colorCode.color_code}
-                    colorId={colorCode.id}
-                    showActions={true}
-                  />
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: group.theme ? '1fr auto' : '1fr', gap: 20, alignItems: 'start' }}>
+                <div className="grid auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+                  {group.colors.map((colorCode) => (
+                    <ColorCard
+                      key={colorCode.id}
+                      hex={colorCode.hex_code}
+                      name={colorCode.name || colorCode.color_code}
+                      colorId={colorCode.id}
+                      showActions={true}
+                    />
+                  ))}
+                </div>
+                {group.theme && (
+                  <div style={{
+                    display: 'grid',
+                    gap: 8,
+                    minWidth: 200,
+                    maxWidth: 300
+                  }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      color: '#374151',
+                      marginBottom: 4
+                    }}>
+                      테마 이미지
+                    </div>
+                    <img
+                      src={group.theme.thumbnail_url}
+                      alt={group.theme.name || 'Theme'}
+                      style={{
+                        width: '100%',
+                        height: 'auto',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        objectFit: 'cover',
+                        aspectRatio: '4/3'
+                      }}
+                    />
+                    {group.theme.name && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        textAlign: 'center'
+                      }}>
+                        {group.theme.name}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
