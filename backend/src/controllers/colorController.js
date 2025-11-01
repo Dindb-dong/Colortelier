@@ -46,15 +46,35 @@ export const createColorCode = async (req, res) => {
       }
     }
 
-    // Check if color code already exists
-    const { data: existingColor } = await supabase
-      .from('color_codes')
-      .select('id')
-      .eq('color_code', color_code)
-      .single();
+    // 컬러 코드의 필수 부분만 추출 (L-KR-SEL-HNGD-CL-GD-SK -> L-KR-SEL-HNGD-CL-GD)
+    const getBaseColorCode = (code) => {
+      const parts = code.split('-');
+      // 필수 부분은 앞 6개 (domain, country, city, detail, weather, time)
+      return parts.slice(0, 6).join('-');
+    };
 
-    if (existingColor) {
-      return res.status(409).json({ error: 'Color code already exists' });
+    const baseColorCode = getBaseColorCode(color_code);
+    const normalizedHex = hex_code.toUpperCase();
+
+    // 1. hex값이 겹치는지 확인
+    const { data: existingColorsWithSameHex } = await supabase
+      .from('color_codes')
+      .select('id, color_code')
+      .eq('hex_code', normalizedHex);
+
+    if (existingColorsWithSameHex && existingColorsWithSameHex.length > 0) {
+      // 2. 같은 hex값이 있으면, 같은 필수 컬러 코드를 가지는지 확인
+      const hasSameBaseCode = existingColorsWithSameHex.some(existing => {
+        const existingBaseCode = getBaseColorCode(existing.color_code);
+        return existingBaseCode === baseColorCode;
+      });
+
+      if (hasSameBaseCode) {
+        return res.status(409).json({ 
+          error: 'This hex color already exists with the same theme code (base color code)' 
+        });
+      }
+      // 다른 필수 컬러 코드면 등록 가능 (통과)
     }
 
     // Create color code

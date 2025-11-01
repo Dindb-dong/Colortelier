@@ -34,15 +34,24 @@ export default function PalettePage() {
     fetchColorCodes()
   }, [q])
 
+  // 컬러 코드의 필수 부분만 추출 (L-KR-SEL-HNGD-CL-GD-SK -> L-KR-SEL-HNGD-CL-GD)
+  const getBaseColorCode = (colorCode: string): string => {
+    const parts = colorCode.split('-')
+    // 필수 부분은 앞 6개 (domain, country, city, detail, weather, time)
+    // 선택적 부분은 7번째 이후 (theme 등)
+    return parts.slice(0, 6).join('-')
+  }
+
   // colorCodes가 변경되면 그룹화
   useEffect(() => {
     if (colorCodes.length > 0) {
       const grouped = colorCodes.reduce((acc, color) => {
-        const code = color.color_code
-        if (!acc[code]) {
-          acc[code] = []
+        // 필수 부분만 사용하여 그룹화
+        const baseCode = getBaseColorCode(color.color_code)
+        if (!acc[baseCode]) {
+          acc[baseCode] = []
         }
-        acc[code].push(color)
+        acc[baseCode].push(color)
         return acc
       }, {} as Record<string, ColorCode[]>)
 
